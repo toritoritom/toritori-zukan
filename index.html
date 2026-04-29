@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ToriTori野鳥ライフリスト</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet" />
+  <style>html,body,#root{margin:0;padding:0;background:#F5F0E8}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ── Supabase 接続設定 ──────────────────────────────
+const SUPABASE_URL = "https://zxweklcfpcywsvlwwxzv.supabase.co";
+const SUPABASE_KEY = "sb_publishable_oYsyWgUbLZWUW-pSPBaGuA_aBIewwrx";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ──────────────────────────────────────────────────
+
+const CATEGORIES = [
+  { id:"kamo",        label:"カモ目",        emoji:"🦆", color:"#4A6E7A" },
+  { id:"kiji",        label:"キジ目",        emoji:"🦃", color:"#7A5C3A" },
+  { id:"yotaka",      label:"ヨタカ目",      emoji:"🌙", color:"#4A3C6A" },
+  { id:"amatsubame",  label:"アマツバメ目",  emoji:"🌪️", color:"#3A5A6A" },
+  { id:"nogan",       label:"ノガン目",      emoji:"🪶", color:"#6A5A3A" },
+  { id:"kakkou",      label:"カッコウ目",    emoji:"🐦", color:"#5A6A3A" },
+  { id:"sakei",       label:"サケイ目",      emoji:"🏜️", color:"#8A7A4A" },
+  { id:"hato",        label:"ハト目",        emoji:"🕊️", color:"#7A6A5A" },
+  { id:"tsuru",       label:"ツル目",        emoji:"🦢", color:"#6A7A8A" },
+  { id:"kaitsuburi",  label:"カイツブリ目",  emoji:"🐟", color:"#3A6A7A" },
+  { id:"chidori",     label:"チドリ目",      emoji:"🌊", color:"#5A7A6A" },
+  { id:"nettaityo",   label:"ネッタイチョウ目",emoji:"🌺",color:"#8A4A5A" },
+  { id:"abi",         label:"アビ目",        emoji:"🌊", color:"#3A4A7A" },
+  { id:"mizunagidori",label:"ミズナギドリ目",emoji:"🌬️", color:"#4A5A8A" },
+  { id:"kounotori",   label:"コウノトリ目",  emoji:"🦩", color:"#7A8A6A" },
+  { id:"katsuodori",  label:"カツオドリ目",  emoji:"🐠", color:"#4A6A5A" },
+  { id:"perikan",     label:"ペリカン目",    emoji:"🦢", color:"#6A5A7A" },
+  { id:"taka",        label:"タカ目",        emoji:"🦅", color:"#7A4A3A" },
+  { id:"fukurou",     label:"フクロウ目",    emoji:"🦉", color:"#5A4A6A" },
+  { id:"saichou",     label:"サイチョウ目",  emoji:"🌿", color:"#5A7A4A" },
+  { id:"buppousou",   label:"ブッポウソウ目",emoji:"💎", color:"#3A6A8A" },
+  { id:"kitsutsuki",  label:"キツツキ目",    emoji:"🌳", color:"#6A4A3A" },
+  { id:"hayabusa",    label:"ハヤブサ目",    emoji:"⚡", color:"#7A6A3A" },
+  { id:"suzume",      label:"スズメ目",      emoji:"🐦", color:"#5C7A4E" },
+  { id:"inko",        label:"インコ目",      emoji:"🦜", color:"#4A7A4A" },
+];
+
+const SPECIES_LIST = {
+  kamo:["リュウキュウガモ","コクガン","アオガン","カナダガン","シジュウカラガン","インドガン","ミカドガン","ハクガン","ハイイロガン","サカツラガン","ヒシクイ","マガン","カリガネ","コブハクチョウ","ナキハクチョウ","コハクチョウ","オオハクチョウ","ツクシガモ","アカツクシガモ","カンムリツクシガモ","オシドリ","ナンキンオシ","トモエガモ","シマアジ","ミカヅキシマアジ","ハシビロガモ","オカヨシガモ","ヨシガモ","ヒドリガモ","アメリカヒドリ","アカノドカルガモ","カルガモ","マガモ","オナガガモ","コガモ","アカハシハジロ","オオホシハジロ","アメリカホシハジロ","ホシハジロ","アカハジロ","メジロガモ","クビワキンクロ","キンクロハジロ","スズガモ","コスズガモ","コケワタガモ","ケワタガモ","シノリガモ","アラナミキンクロ","アメリカビロードキンクロ","ビロードキンクロ","クロガモ","コオリガモ","ヒメハジロ","ホオジロガモ","ミコアイサ","オウギアイサ","カワアイサ","ウミアイサ","コウライアイサ","コクチョウ"],
+  kiji:["エゾライチョウ","ライチョウ","ヤマドリ","キジ","ウズラ","コリンウズラ","タイリクキジ","コジュケイ"],
+  yotaka:["ヨタカ"],
+  amatsubame:["ハリオアマツバメ","クロビタイハリオアマツバメ","アマツバメ","ヒメアマツバメ"],
+  nogan:["ノガン","ヒメノガン"],
+  kakkou:["バンケン","カンムリカッコウ","オニカッコウ","キジカッコウ","ヒメカッコウ","オウチュウカッコウ","オオジュウイチ","ジュウイチ","ホトトギス","セグロカッコウ","ツツドリ","カッコウ"],
+  sakei:["サケイ"],
+  hato:["ヒメモリバト","カラスバト","オガサワラカラスバト","リュウキュウカラスバト","キジバト","シラコバト","ベニバト","キンバト","アオバト","ズアカアオバト","クロアゴヒメアオバト","カワラバト"],
+  tsuru:["クイナ","ウズラクイナ","ミナミクイナ","ヤンバルクイナ","バン","オオバン","シマクイナ","ヒクイナ","コウライクイナ","ヒメクイナ","オオクイナ","マミジロクイナ","ツルクイナ","シロハラクイナ","ソデグロヅル","カナダヅル","マナヅル","アネハヅル","タンチョウ","クロヅル","ナベヅル"],
+  kaitsuburi:["カイツブリ","アカエリカイツブリ","カンムリカイツブリ","ミミカイツブリ","ハジロカイツブリ"],
+  chidori:["ミフウズラ","ミヤコドリ","セイタカシギ","オーストラリアセイタカシギ","ソリハシセイタカシギ","タゲリ","ケリ","ヨーロッパムナグロ","ムナグロ","ダイゼン","ハジロコチドリ","ミズカキチドリ","イカルチドリ","コチドリ","シロチドリ","オオメダイチドリ","メダイチドリ","オオチドリ","コバシチドリ","タマシギ","レンカク","ハリモモチュウシャク","チュウシャクシギ","コシャクシギ","ホウロクシギ","シロハラチュウシャクシギ","ダイシャクシギ","オオソリハシシギ","オグロシギ","アメリカオグロシギ","キョウジョシギ","オバシギ","コオバシギ","エリマキシギ","キリアイ","ウズラシギ","アシナガシギ","サルハマシギ","オジロトウネン","ヒバリシギ","ヘラシギ","トウネン","ミユビシギ","ハマシギ","チシマシギ","ヒメウズラシギ","ヨーロッパトウネン","コシジロウズラシギ","コモンシギ","アメリカウズラシギ","ヒメハマシギ","シベリアオオハシシギ","オオハシシギ","アメリカオオハシシギ","ヤマシギ","アマミヤマシギ","コシギ","アオシギ","オオジシギ","ハリオシギ","チュウジシギ","タシギ","ソリハシシギ","アメリカヒレアシシギ","アカエリヒレアシシギ","ハイイロヒレアシシギ","イソシギ","アメリカイソシギ","クサシギ","メリケンキアシシギ","キアシシギ","コキアシシギ","アカアシシギ","コアオアシシギ","タカブシギ","ツルシギ","アオアシシギ","カラフトアオアシシギ","オオキアシシギ","ツバメチドリ","クロアジサシ","ヒメクロアジサシ","ハイイロアジサシ","シロアジサシ","ミツユビカモメ","アカアシミツユビカモメ","ゾウゲカモメ","クビワカモメ","ハシボソカモメ","ボナパルトカモメ","チャガシラカモメ","ユリカモメ","ズグロカモメ","ヒメカモメ","ヒメクビワカモメ","ワライカモメ","アメリカズグロカモメ","ゴビズキンカモメ","オオズグロカモメ","ウミネコ","カモメ","ワシカモメ","シロカモメ","アイスランドカモメ","セグロカモメ","オオセグロカモメ","ニシセグロカモメ","ハシブトアジサシ","オニアジサシ","オオアジサシ","ベンガルアジサシ","コアジサシ","アメリカコアジサシ","コシジロアジサシ","ナンヨウマミジロアジサシ","マミジロアジサシ","セグロアジサシ","ベニアジサシ","エリグロアジサシ","アジサシ","キョクアジサシ","クロハラアジサシ","ハジロクロハラアジサシ","ハシグロクロハラアジサシ","オオトウゾクカモメ","トウゾクカモメ","クロトウゾクカモメ","シロハラトウゾクカモメ","ヒメウミスズメ","ハシブトウミガラス","ウミガラス","ウミバト","ケイマフリ","マダラウミスズメ","ウミスズメ","カンムリウミスズメ","アメリカウミスズメ","ウミオウム","コウミスズメ","シラヒゲウミスズメ","エトロフウミスズメ","ウトウ","ツノメドリ","エトピリカ"],
+  nettaityo:["アカオネッタイチョウ","シラオネッタイチョウ"],
+  abi:["アビ","オオハム","シロエリオオハム","ハシグロアビ","ハシジロアビ"],
+  mizunagidori:["アシナガウミツバメ","コアホウドリ","クロアシアホウドリ","アホウドリ","ハイイロウミツバメ","ヒメクロウミツバメ","クロウミツバメ","コシジロウミツバメ","クロコシジロウミツバメ","オーストンウミツバメ","フルマカモメ","ハジロミズナギドリ","オオシロハラミズナギドリ","カワリシロハラミズナギドリ","ハワイシロハラミズナギドリ","マダラシロハラミズナギドリ","クビワオオシロハラミズナギドリ","ハグロシロハラミズナギドリ","シロハラミズナギドリ","ヒメシロハラミズナギドリ","オオミズナギドリ","オナガミズナギドリ","ミナミオナガミズナギドリ","ハイイロミズナギドリ","ハシボソミズナギドリ","シロハラアカアシミズナギドリ","アカアシミズナギドリ","コミズナギドリ","オガサワラヒメミズナギドリ","ハワイセグロミズナギドリ","オガサワラミズナギドリ","アナドリ"],
+  kounotori:["ナベコウ","コウノトリ"],
+  katsuodori:["オオグンカンドリ","コグンカンドリ","アオツラカツオドリ","アカアシカツオドリ","カツオドリ","チシマウガラス","ヒメウ","ウミウ","カワウ"],
+  perikan:["クロトキ","トキ","ブロンズトキ","ヘラサギ","クロツラヘラサギ","サンカノゴイ","ヨシゴイ","オオヨシゴイ","リュウキュウヨシゴイ","タカサゴクロサギ","ミゾゴイ","ズグロミゾゴイ","ゴイサギ","ハシブトゴイ","ササゴイ","アカガシラサギ","アマサギ","アオサギ","ムラサキサギ","ダイサギ","チュウサギ","コサギ","クロサギ","カラシラサギ","モモイロペリカン","ホシバシペリカン","ハイイロペリカン"],
+  taka:["ミサゴ","ハチクマ","クロハゲワシ","カンムリワシ","クマタカ","カラフトワシ","カタシロワシ","イヌワシ","アカハラダカ","ツミ","ハイタカ","オオタカ","チュウヒ","ハイイロチュウヒ","アメリカハイイロチュウヒ","マダラチュウヒ","トビ","オオワシ","オジロワシ","ハクトウワシ","サシバ","ケアシノスリ","オオノスリ","ノスリ"],
+  fukurou:["アオバズク","キンメフクロウ","コノハズク","リュウキュウコノハズク","オオコノハズク","トラフズク","コミミズク","シロフクロウ","ワシミミズク","シマフクロウ","フクロウ"],
+  saichou:["ヤツガシラ"],
+  buppousou:["ブッポウソウ","アカショウビン","ヤマショウビン","ナンヨウショウビン","ミヤコショウビン","カワセミ","ミツユビカワセミ","ヤマセミ","ルリオハチクイ","ハチクイ"],
+  kitsutsuki:["アリスイ","コゲラ","ミユビゲラ","コアカゲラ","チャバラアカゲラ","アカゲラ","ノグチゲラ","オオアカゲラ","キタタキ","クマゲラ","アオゲラ","ヤマゲラ"],
+  hayabusa:["ヒメチョウゲンボウ","チョウゲンボウ","アカアシチョウゲンボウ","コチョウゲンボウ","チゴハヤブサ","シロハヤブサ","ハヤブサ"],
+  suzume:["ズグロヤイロチョウ","ヤイロチョウ","モリツバメ","サンショウクイ","リュウキュウサンショウクイ","アサクラサンショウクイ","コウライウグイス","カンムリオウチュウ","ハイイロオウチュウ","オウチュウ","クロエリヒタキ","サンコウチョウ","オオカラモズ","オオモズ","チゴモズ","セアカモズ","アカモズ","モズ","タカサゴモズ","カケス","ルリカケス","オナガ","カササギ","ホシガラス","ニシコクマルガラス","コクマルガラス","ミヤマガラス","ハシボソガラス","ハシブトガラス","ワタリガラス","キレンジャク","ヒレンジャク","ヒガラ","キバラガラ","ヤマガラ","オリイヤマガラ","ハシブトガラ","コガラ","ルリガラ","シジュウカラ","ツリスガラ","ヒゲガラ","ヒバリ","ハマヒバリ","ヒメコウテンシ","クビワコウテンシ","コウテンシ","コヒバリ","ヒヨドリ","シロガシラ","ショウドウツバメ","タイワンショウドウツバメ","リュウキュウツバメ","ツバメ","イワツバメ","コシアカツバメ","ウグイス","チョウセンウグイス","ヤブサメ","エナガ","モリムシクイ","キマユムシクイ","シセンムシクイ","カラフトムシクイ","カラフトムジセッカ","ムジセッカ","キタヤナギムシクイ","チフチャフ","センダイムシクイ","イイジマムシクイ","ヤナギムシクイ","エゾムシクイ","アムールムシクイ","メボソムシクイ","オオムシクイ","コムシクイ","オオヨシキリ","コヨシキリ","スゲヨシキリ","マンシュウイナダヨシキリ","ヤブヨシキリ","ハシブトオオヨシキリ","ヒメウタイムシクイ","エゾセンニュウ","オオセッカ","シベリアセンニュウ","シマセンニュウ","ウチヤマセンニュウ","マキノセンニュウ","セッカ","コノドジロムシクイ","メグロ","チョウセンメジロ","メジロ","キクイタダキ","ミソサザイ","ゴジュウカラ","キバシリ","ギンムクドリ","ムクドリ","シベリアムクドリ","コムクドリ","カラムクドリ","バライロムクドリ","ホシムクドリ","ハイイロチャツグミ","トラツグミ","ミナミトラツグミ","オガサワラガビチョウ","マミジロ","オレンジジツグミ","ウタツグミ","ヤドリギツグミ","クロウタドリ","ワキアカツグミ","クロツグミ","カラアカハラ","マミチャジナイ","シロハラ","アカハラ","アカコッコ","ノハラツグミ","ノドグロツグミ","ツグミ","ハチジョウツグミ","エゾビタキ","サメビタキ","ミヤマヒタキ","チャムネサメビタキ","コサメビタキ","ムナフヒタキ","オオルリ","ロクショウヒタキ","ヨーロッパコマドリ","オガワコマドリ","ノゴマ","コルリ","コマドリ","アカヒゲ","ホントウアカヒゲ","シマゴマ","マミジロキビタキ","キビタキ","リュウキュウキビタキ","ムギマキ","ニシオジロビタキ","オジロビタキ","マダラヒタキ","ルリビタキ","セアカジョウビタキ","カワビタキ","クロジョウビタキ","シロビタイジョウビタキ","ジョウビタキ","ヒメイソヒヨ","コシジロイソヒヨドリ","イソヒヨドリ","ヤマザキヒタキ","マミジロノビタキ","クロノビタキ","ノビタキ","ハシグロヒタキ","イナバヒタキ","サバクヒタキ","セグロサバクヒタキ","カワガラス","ニュウナイスズメ","スズメ","イエスズメ","イワヒバリ","ヤマヒバリ","カヤクグリ","イワミセキレイ","ニシツメナガセキレイ","ツメナガセキレイ","キガシラセキレイ","キセキレイ","ハクセキレイ","セグロセキレイ","マミジロタヒバリ","コマミジロタヒバリ","マキバタヒバリ","ヨーロッパビンズイ","ビンズイ","セジロタヒバリ","ウスベニタヒバリ","ムネアカタヒバリ","タヒバリ","ズアオアトリ","アトリ","シメ","コイカル","イカル","ギンザンマシコ","ウソ","ハギマシコ","アカマシコ","オガサワラマシコ","ベニマシコ","オオマシコ","カワラヒワ","オガサワラカワラヒワ","ベニヒワ","イスカ","ナキイスカ","マヒワ","ツメナガホオジロ","ユキホオジロ","キアオジ","シラガホオジロ","ホオジロ","イワバホオジロ","ズアオホオジロ","シロハラホオジロ","ホオアカ","コホオアカ","キマユホオジロ","カシラダカ","ミヤマホオジロ","シマアオジ","シマノジコ","ズグロチャキンチョウ","チャキンチョウ","ノジコ","シベリアアオジ","アオジ","クロジ","シベリアジュリン","コジュリン","オオジュリン","ゴマフスズメ","ミヤマシトド","キガシラシトド","サバンナシトド"],
+  inko:["ワカケホンセイインコ","ホンセイインコ","オキナインコ","コザクラインコ","セキセイインコ"],
+};
+
+const SEASON_TAGS = ["留鳥","夏鳥","冬鳥","旅鳥","迷鳥","外来種"];
+const totalSpecies = Object.values(SPECIES_LIST).reduce((s,a)=>s+a.length,0);
+
+function compressImage(file,maxW=1200,quality=0.78){
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const scale=Math.min(1,maxW/Math.max(img.width,img.height));
+        const canvas=document.createElement("canvas");
+        canvas.width=img.width*scale; canvas.height=img.height*scale;
+        canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+        resolve(canvas.toDataURL("image/jpeg",quality));
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// EXIFデータを読み取って整形
+async function extractExif(file) {
+  try {
+    const exif = await window.exifr.parse(file);
+    if (!exif) return null;
+    const camera = [exif.Make, exif.Model].filter(Boolean).join(" ") || null;
+    const lens   = exif.LensModel || exif.Lens || null;
+    const f      = exif.FNumber ? `F${exif.FNumber}` : null;
+    const ss     = exif.ExposureTime
+      ? (exif.ExposureTime < 1 ? `1/${Math.round(1/exif.ExposureTime)}秒` : `${exif.ExposureTime}秒`)
+      : null;
+    const ev     = (exif.ExposureCompensation != null && exif.ExposureCompensation !== undefined)
+      ? `${exif.ExposureCompensation > 0 ? "+" : ""}${exif.ExposureCompensation}`
+      : null;
+    const fl     = exif.FocalLength ? `${Math.round(exif.FocalLength)}mm` : null;
+    const isoVal = exif.ISO || exif.ISOSpeedRatings || exif.PhotographicSensitivity;
+    const iso    = isoVal ? `ISO${isoVal}` : null;
+    if (!camera && !lens && !f && !ss) return null;
+    return { camera, lens, f, ss, ev, fl, iso };
+  } catch(e) { console.warn("EXIF読み取り失敗:", e); return null; }
+}
+async function uploadOriginal(file) {
+  const ext = file.name.split(".").pop() || "jpg";
+  const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage.from("bird-photos").upload(path, file, { upsert: false });
+  if (error) return null;
+  const { data } = supabase.storage.from("bird-photos").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+const ADMIN_PASSWORD = "Toritori3150";
+
+function App(){
+  const [allObs, setAllObs]           = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [dbError, setDbError]         = useState(null);
+  const [view, setView]               = useState("home");
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeSpecies, setActiveSpecies]   = useState(null);
+  const [showForm, setShowForm]       = useState(false);
+  const [search, setSearch]           = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [form, setForm]               = useState({season:"留鳥",location:"",date:"",memo:"",author: localStorage.getItem("toritori_username") || ""});
+  const [photos, setPhotos]           = useState([]);
+  const [dragging, setDragging]       = useState(false);
+  const [submitted, setSubmitted]     = useState(false);
+  const [uploading, setUploading]     = useState(false);
+  const [saving, setSaving]           = useState(false);
+  const [editingObs, setEditingObs]   = useState(null);
+  const [lightbox, setLightbox]       = useState(null);
+  const [isAdmin, setIsAdmin]         = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminPwInput, setAdminPwInput]     = useState("");
+  const [adminPwError, setAdminPwError]     = useState(false);
+  const [currentUserName, setCurrentUserName] = useState(()=> localStorage.getItem("toritori_username") || "");
+  // アクセスパスワード
+  const [isLoggedIn, setIsLoggedIn]         = useState(false);
+  const [accessPw, setAccessPw]             = useState("");
+  const [accessPwInput, setAccessPwInput]   = useState("");
+  const [accessPwError, setAccessPwError]   = useState(false);
+  const [accessPwLoading, setAccessPwLoading] = useState(true);
+  // 管理者：パスワード変更
+  const [showPwChange, setShowPwChange]     = useState(false);
+  const [newPwInput, setNewPwInput]         = useState("");
+  const [pwChangeMsg, setPwChangeMsg]       = useState("");
+  const fileInputRef = useRef(null);
+
+  // アクセスパスワードをDBから取得
+  useEffect(()=>{
+    (async()=>{
+      const { data } = await supabase.from("config").select("value").eq("key","access_password").single();
+      if (data) setAccessPw(data.value);
+      setAccessPwLoading(false);
+    })();
+  },[]);
+
+  const handleAccessLogin = () => {
+    if (accessPwInput === accessPw) {
+      setIsLoggedIn(true); setAccessPwError(false);
+    } else {
+      setAccessPwError(true);
+    }
+  };
+
+  const handlePwChange = async () => {
+    if (!newPwInput.trim()) return;
+    const { error } = await supabase.from("config").update({ value: newPwInput }).eq("key","access_password");
+    if (error) { setPwChangeMsg("❌ 変更に失敗しました"); return; }
+    setAccessPw(newPwInput);
+    setNewPwInput("");
+    setPwChangeMsg("✅ パスワードを変更しました");
+    setTimeout(()=>{ setPwChangeMsg(""); setShowPwChange(false); },2000);
+  };
+
+  // DB から全記録を取得
+  const fetchObs = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("observations")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) { setDbError(error.message); }
+    else { setAllObs(data || []); }
+    setLoading(false);
+  };
+
+  useEffect(()=>{ fetchObs(); },[]);
+
+  // リアルタイム購読（他の人の投稿が即反映）
+  useEffect(()=>{
+    const channel = supabase
+      .channel("observations_realtime")
+      .on("postgres_changes",{ event:"INSERT", schema:"public", table:"observations" },
+        payload => {
+          // 自分の投稿は handleSubmit で既に追加済みなので重複を防ぐ
+          setAllObs(prev => prev.some(o => o.id === payload.new.id) ? prev : [payload.new, ...prev]);
+        })
+      .subscribe();
+    return ()=>{ supabase.removeChannel(channel); };
+  },[]);
+
+  const obsFor = (catId, sp) =>
+    allObs.filter(o => o.category===catId && o.species===sp);
+
+  const handleFiles = async (files) => {
+    setUploading(true);
+    const processed = await Promise.all(
+      Array.from(files).slice(0,5).map(async f => ({
+        dataUrl:      await compressImage(f),
+        originalFile: f,
+        name:         f.name,
+        exif:         await extractExif(f),
+      }))
+    );
+    setPhotos(prev=>[...prev,...processed].slice(0,5));
+    setUploading(false);
+  };
+
+  const handleSubmit = async () => {
+    if (!form.location || !form.date) return;
+    setSaving(true);
+    if (editingObs) {
+      // 編集モード：新規追加分のみStorageにアップロード
+      const photoData = await Promise.all(photos.map(async p => {
+        if (p.dataUrl !== undefined && p.originalFile) {
+          // 新しく追加された写真
+          const origUrl = await uploadOriginal(p.originalFile);
+          return { thumb: p.dataUrl, original: origUrl || p.dataUrl, exif: p.exif || null };
+        }
+        // 既存の写真（すでにオブジェクト or 文字列）
+        if (typeof p === "object" && p.thumb) return p;
+        return { thumb: p, original: p };
+      }));
+      const { error } = await supabase.from("observations").update({
+        season:   form.season,
+        location: form.location,
+        date:     form.date,
+        memo:     form.memo,
+        author:   form.author,
+        photos:   photoData,
+      }).eq("id", editingObs.id);
+      setSaving(false);
+      if (error) { alert("更新に失敗しました："+error.message); return; }
+      setAllObs(prev => prev.map(o => o.id===editingObs.id
+        ? {...o, season:form.season, location:form.location, date:form.date, memo:form.memo, author:form.author, photos:photoData}
+        : o));
+    } else {
+      // 新規追加：Storageにオリジナルをアップロード
+      const photoData = await Promise.all(photos.map(async p => {
+        const origUrl = p.originalFile ? await uploadOriginal(p.originalFile) : null;
+        return { thumb: p.dataUrl, original: origUrl || p.dataUrl, exif: p.exif || null };
+      }));
+      const { data: inserted, error } = await supabase.from("observations").insert([{
+        category: activeCategory,
+        species:  activeSpecies,
+        season:   form.season,
+        location: form.location,
+        date:     form.date,
+        memo:     form.memo,
+        author:   form.author,
+        photos:   photoData,
+      }]).select().single();
+      setSaving(false);
+      if (error) { alert("保存に失敗しました："+error.message); return; }
+      // リアルタイム購読を待たず即時反映
+      setAllObs(prev => [inserted, ...prev]);
+    }
+    setForm({season:"留鳥",location:"",date:"",memo:"",author:""});
+    setPhotos([]);
+    setEditingObs(null);
+    // 記入者名を記憶
+    if (form.author) { setCurrentUserName(form.author); localStorage.setItem("toritori_username", form.author); }
+    setSubmitted(true);
+    setTimeout(()=>{ setSubmitted(false); setShowForm(false); },1800);
+  };
+
+  const handleDelete = async (obs) => {
+    if (!window.confirm(`「${obs.species}」の記録を削除しますか？`)) return;
+    const { error } = await supabase.from("observations").delete().eq("id", obs.id);
+    if (error) { alert("削除に失敗しました："+error.message); return; }
+    setAllObs(prev => prev.filter(o => o.id !== obs.id));
+  };
+
+  const openEdit = (obs) => {
+    setEditingObs(obs);
+    setForm({ season:obs.season||"留鳥", location:obs.location||"", date:obs.date||"", memo:obs.memo||"", author:obs.author||"" });
+    setPhotos(obs.photos||[]);
+    setShowForm(true);
+  };
+
+  const handleAdminLogin = () => {
+    if (adminPwInput === ADMIN_PASSWORD) {
+      setIsAdmin(true); setShowAdminLogin(false); setAdminPwInput(""); setAdminPwError(false);
+    } else {
+      setAdminPwError(true);
+    }
+  };
+
+  const handleSearch = (val) => {
+    setSearch(val);
+    if (!val.trim()){ setSearchResults([]); return; }
+    const results=[];
+    for(const cat of CATEGORIES)
+      for(const sp of (SPECIES_LIST[cat.id]||[]))
+        if(sp.includes(val)) results.push({catId:cat.id,catLabel:cat.label,name:sp});
+    setSearchResults(results);
+  };
+
+  const cat = CATEGORIES.find(c=>c.id===activeCategory);
+  const speciesList = activeCategory?(SPECIES_LIST[activeCategory]||[]):[];
+  const totalObs = allObs.length;
+
+  const countByCat = (catId) => allObs.filter(o=>o.category===catId).length;
+
+  return(
+    <>
+      <style>{`
+        .app{min-height:100vh;background:#F5F0E8;font-family:'Noto Serif JP',serif;color:#2C2416}
+        .hdr{background:#2C3B28;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+        .hdr-title{font-family:'Zen Old Mincho',serif;font-size:17px;color:#E8DFC0;letter-spacing:.15em;cursor:pointer}
+        .hdr-sub{font-size:9px;color:#8FA882;letter-spacing:.2em;display:block;margin-top:2px}
+        .post-btn{background:#7A9B6A;color:#F5F0E8;border:none;padding:7px 13px;border-radius:20px;font-size:11px;cursor:pointer;font-family:'Noto Serif JP',serif;white-space:nowrap}
+        .post-btn:disabled{opacity:.4;cursor:default}
+        .hero{padding:26px 20px 18px;text-align:center;background:linear-gradient(160deg,#2C3B28 0%,#3D5235 100%)}
+        .hero-lbl{font-size:9px;letter-spacing:.3em;color:#8FA882;margin-bottom:8px}
+        .hero-title{font-family:'Zen Old Mincho',serif;font-size:24px;color:#E8DFC0;line-height:1.5;letter-spacing:.1em}
+        .hero-stats{display:flex;justify-content:center;gap:22px;margin-top:10px}
+        .stat-num{font-size:20px;color:#A8C898;font-weight:600}
+        .stat-lbl{font-size:9px;color:#8FA882;letter-spacing:.1em}
+        .search-wrap{padding:12px 18px 0}
+        .search-input{width:100%;padding:9px 14px;border:1.5px solid #C8BC9E;border-radius:24px;background:#FBF8F0;font-size:13px;font-family:'Noto Serif JP',serif;color:#2C2416;outline:none}
+        .search-input:focus{border-color:#7A9B6A}
+        .search-results{padding:6px 18px}
+        .sr-item{padding:10px 12px;border-bottom:1px solid #EDE5D0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-radius:6px}
+        .sr-item:hover{background:#F0EAD8}
+        .sr-name{font-size:14px;color:#2C2416}
+        .sr-cat{font-size:10px;color:#8A7A5A}
+        .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 18px 20px}
+        .cat-card{background:#FBF8F0;border:1.5px solid #D8CEB0;border-radius:10px;padding:14px 12px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
+        .cat-card:hover{transform:translateY(-2px);box-shadow:0 5px 16px rgba(44,59,40,.12);border-color:#7A9B6A}
+        .cat-emoji{font-size:20px;margin-bottom:5px;display:block}
+        .cat-name{font-size:12px;font-weight:600;letter-spacing:.05em;color:#2C3B28}
+        .cat-count{font-size:10px;color:#8A7A5A;margin-top:2px}
+        .cat-bar{position:absolute;bottom:0;left:0;right:0;height:3px}
+        .page-hdr{padding:16px 18px 12px;border-bottom:1px solid #D8CEB0}
+        .back-btn{background:none;border:none;color:#5C7A4E;font-size:12px;cursor:pointer;font-family:'Noto Serif JP',serif;padding:0;margin-bottom:8px;display:flex;align-items:center;gap:3px}
+        .page-title{font-family:'Zen Old Mincho',serif;font-size:19px;color:#2C3B28;letter-spacing:.1em}
+        .page-sub{font-size:10px;color:#8A7A5A;margin-top:3px}
+        .sp-list{padding:6px 18px 20px}
+        .sp-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #EDE5D0;cursor:pointer;transition:background .15s;border-radius:6px}
+        .sp-item:hover{background:#F0EAD8}
+        .sp-name{font-size:14px;color:#2C2416;letter-spacing:.03em}
+        .sp-cnt{font-size:10px;background:#E8F0E4;color:#4A6B3C;padding:2px 8px;border-radius:10px}
+        .sp-none{font-size:10px;color:#C0B090}
+        .obs-wrap{padding:12px 18px 20px}
+        .add-btn{width:100%;padding:11px;border:2px dashed #A8C098;border-radius:10px;background:none;color:#5C7A4E;font-size:13px;font-family:'Noto Serif JP',serif;cursor:pointer;margin-bottom:12px;letter-spacing:.05em}
+        .add-btn:hover{background:#EEF4EA}
+        .obs-card{background:#FBF8F0;border:1.5px solid #D8CEB0;border-radius:10px;padding:13px;margin-bottom:12px}
+        .obs-season{display:inline-block;font-size:10px;padding:2px 9px;border-radius:10px;background:#E8F0E4;color:#4A6B3C;margin-bottom:7px}
+        .obs-meta{font-size:12px;color:#8A7A5A;line-height:1.8}
+        .obs-memo{font-size:13px;color:#4A3C2A;margin-top:7px;line-height:1.7}
+        .obs-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:10px}
+        .obs-thumb{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;transition:opacity .15s}
+        .obs-thumb:hover{opacity:.85}
+        .empty{text-align:center;padding:28px 20px;color:#A0906A;font-size:13px;line-height:2}
+        .sp-detail-hdr{padding:16px 18px 13px;border-bottom:1px solid #D8CEB0}
+        .sp-detail-name{font-family:'Zen Old Mincho',serif;font-size:24px;color:#2C3B28;letter-spacing:.1em;margin-bottom:3px}
+        .sp-detail-cat{font-size:11px;color:#8A7A5A}
+        .loading{text-align:center;padding:40px;color:#8A7A5A;font-size:14px}
+        .db-error{margin:16px;padding:14px;background:#FDE8E8;border:1px solid #F0B0B0;border-radius:8px;color:#903030;font-size:13px;line-height:1.7}
+        .realtime-badge{display:inline-block;width:7px;height:7px;background:#6BCB6B;border-radius:50%;margin-right:5px;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+        .overlay{position:fixed;inset:0;background:rgba(44,59,40,.5);z-index:200;display:flex;align-items:flex-end}
+        .sheet{background:#F5F0E8;width:100%;max-height:92vh;overflow-y:auto;border-radius:16px 16px 0 0;padding:18px}
+        .handle{width:36px;height:4px;background:#C8BC9E;border-radius:2px;margin:0 auto 16px}
+        .form-title{font-family:'Zen Old Mincho',serif;font-size:16px;color:#2C3B28;margin-bottom:3px;letter-spacing:.08em}
+        .form-sub{font-size:11px;color:#8A7A5A;margin-bottom:14px}
+        .fg{margin-bottom:13px}
+        .fl{font-size:10px;letter-spacing:.15em;color:#6A5A3A;margin-bottom:4px;display:block}
+        .fi,.fs,.ft{width:100%;padding:9px 12px;border:1.5px solid #C8BC9E;border-radius:8px;background:#FBF8F0;font-size:13px;font-family:'Noto Serif JP',serif;color:#2C2416;outline:none}
+        .fi:focus,.fs:focus,.ft:focus{border-color:#7A9B6A}
+        .ft{height:78px;resize:none;line-height:1.7}
+        .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .photo-drop{border:2px dashed #C8BC9E;border-radius:10px;padding:18px 12px;text-align:center;cursor:pointer;transition:all .18s;background:#FBF8F0}
+        .photo-drop.drag-over{border-color:#7A9B6A;background:#EEF4EA}
+        .photo-drop-icon{font-size:26px;margin-bottom:6px}
+        .photo-drop-text{font-size:12px;color:#8A7A5A;line-height:1.7}
+        .photo-drop-sub{font-size:10px;color:#B0A080;margin-top:3px}
+        .photo-previews{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+        .photo-preview-wrap{position:relative;aspect-ratio:1}
+        .photo-preview-img{width:100%;height:100%;object-fit:cover;border-radius:6px}
+        .photo-remove{position:absolute;top:-5px;right:-5px;width:18px;height:18px;background:#C04040;color:#fff;border-radius:50%;border:none;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+        .uploading-msg{font-size:12px;color:#7A9B6A;text-align:center;padding:8px}
+        .sub-btn{width:100%;padding:13px;background:#2C3B28;color:#E8DFC0;border:none;border-radius:8px;font-size:14px;font-family:'Noto Serif JP',serif;letter-spacing:.1em;cursor:pointer;margin-top:6px}
+        .sub-btn:disabled{opacity:.5;cursor:default}
+        .can-btn{background:none;border:1px solid #C8BC9E;color:#6A5A3A;padding:9px;border-radius:8px;font-size:12px;font-family:'Noto Serif JP',serif;cursor:pointer;width:100%;margin-top:7px}
+        .success{text-align:center;padding:30px;color:#4A6B3C;font-size:16px;letter-spacing:.1em}
+        .login-screen{min-height:100vh;background:linear-gradient(160deg,#2C3B28 0%,#3D5235 100%);display:flex;align-items:center;justify-content:center;padding:24px}
+        .login-box{background:#F5F0E8;border-radius:16px;padding:32px 24px;width:100%;max-width:340px;text-align:center}
+        .login-logo{font-family:'Zen Old Mincho',serif;font-size:26px;color:#2C3B28;letter-spacing:.15em;margin-bottom:4px}
+        .login-sub{font-size:10px;color:#8A7A5A;letter-spacing:.2em;margin-bottom:24px}
+        .login-label{font-size:10px;letter-spacing:.15em;color:#6A5A3A;margin-bottom:6px;display:block;text-align:left}
+        .login-input{width:100%;padding:11px 14px;border:1.5px solid #C8BC9E;border-radius:8px;background:#FBF8F0;font-size:15px;font-family:'Noto Serif JP',serif;color:#2C2416;outline:none;margin-bottom:8px;text-align:center;letter-spacing:.1em}
+        .login-input:focus{border-color:#7A9B6A}
+        .login-error{font-size:11px;color:#C04040;margin-bottom:10px}
+        .login-btn{width:100%;padding:13px;background:#2C3B28;color:#E8DFC0;border:none;border-radius:8px;font-size:14px;font-family:'Noto Serif JP',serif;letter-spacing:.1em;cursor:pointer}
+        .login-btn:disabled{opacity:.5;cursor:default}
+        .login-loading{font-size:13px;color:#8A7A5A;padding:20px}
+        .admin-btn{background:none;border:1px solid #5A7A50;color:#8FA882;padding:5px 10px;border-radius:14px;font-size:10px;cursor:pointer;font-family:'Noto Serif JP',serif;margin-right:6px}
+        .admin-btn.active{background:#3D5235;color:#C8E8B8;border-color:#7A9B6A}
+        .admin-modal{position:fixed;inset:0;background:rgba(44,59,40,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+        .admin-modal-box{background:#F5F0E8;border-radius:14px;padding:24px;width:100%;max-width:320px}
+        .admin-modal-title{font-family:'Zen Old Mincho',serif;font-size:17px;color:#2C3B28;margin-bottom:6px;letter-spacing:.08em}
+        .admin-modal-sub{font-size:11px;color:#8A7A5A;margin-bottom:16px}
+        .admin-pw-input{width:100%;padding:10px 12px;border:1.5px solid #C8BC9E;border-radius:8px;background:#FBF8F0;font-size:14px;font-family:'Noto Serif JP',serif;color:#2C2416;outline:none;margin-bottom:6px}
+        .admin-pw-input:focus{border-color:#7A9B6A}
+        .admin-pw-error{font-size:11px;color:#C04040;margin-bottom:10px}
+        .admin-login-btn{width:100%;padding:11px;background:#2C3B28;color:#E8DFC0;border:none;border-radius:8px;font-size:13px;font-family:'Noto Serif JP',serif;cursor:pointer;margin-bottom:8px}
+        .admin-cancel-btn{width:100%;padding:9px;background:none;border:1px solid #C8BC9E;color:#6A5A3A;border-radius:8px;font-size:12px;font-family:'Noto Serif JP',serif;cursor:pointer}
+        .lb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+        .lb-img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:4px}
+        .obs-actions{display:flex;gap:8px;margin-top:10px}
+        .obs-edit-btn{flex:1;padding:7px;background:none;border:1.5px solid #A8C098;border-radius:7px;color:#4A6B3C;font-size:12px;font-family:'Noto Serif JP',serif;cursor:pointer}
+        .obs-edit-btn:hover{background:#EEF4EA}
+        .obs-del-btn{flex:1;padding:7px;background:none;border:1.5px solid #D0A0A0;border-radius:7px;color:#904040;font-size:12px;font-family:'Noto Serif JP',serif;cursor:pointer}
+        .obs-del-btn:hover{background:#FAF0F0}
+        .lb-meta{color:#C8BC9E;font-size:12px;margin-top:10px;text-align:left;line-height:1.8;white-space:pre-wrap;width:100%;max-width:480px}
+        .lb-close{position:absolute;top:18px;right:20px;background:none;border:none;color:#E8DFC0;font-size:28px;cursor:pointer}
+        .lb-nav{display:flex;gap:16px;margin-top:14px}
+        .lb-nav-btn{background:rgba(255,255,255,.12);border:none;color:#E8DFC0;padding:8px 20px;border-radius:20px;font-size:13px;cursor:pointer;font-family:'Noto Serif JP',serif}
+        .lb-nav-btn:disabled{opacity:.3;cursor:default}
+        .lb-counter{color:#8FA882;font-size:11px;margin-top:6px}
+        .lb-exif{margin-top:10px;padding:10px 14px;background:rgba(44,59,40,.7);border-radius:8px;font-size:11px;color:#C8E0B8;line-height:2;letter-spacing:.04em;text-align:left;width:100%;max-width:480px}
+        .lb-exif-row{display:flex;flex-wrap:wrap;gap:4px 12px}
+      `}</style>
+
+      {/* アクセスログイン画面 */}
+      {!isLoggedIn && (
+        <div className="login-screen">
+          <div className="login-box">
+            <div className="login-logo">ToriTori野鳥ライフリスト</div>
+            <div className="login-sub">WILD BIRD LIFE LIST</div>
+            {accessPwLoading ? (
+              <div className="login-loading">読み込み中…</div>
+            ) : (
+              <>
+                <label className="login-label">アクセスパスワード</label>
+                <input className="login-input" type="password" placeholder="••••••••"
+                  value={accessPwInput}
+                  onChange={e=>{ setAccessPwInput(e.target.value); setAccessPwError(false); }}
+                  onKeyDown={e=>{ if(e.key==="Enter") handleAccessLogin(); }} />
+                {accessPwError && <div className="login-error">パスワードが正しくありません</div>}
+                <button className="login-btn" onClick={handleAccessLogin}>入る</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* メインアプリ（ログイン後のみ表示） */}
+      {isLoggedIn && <div className="app">
+        <div className="hdr">
+          <div onClick={()=>{ setView("home"); setActiveCategory(null); setActiveSpecies(null); setSearch(""); setSearchResults([]); }}>
+            <span className="hdr-title">ToriTori野鳥ライフリスト</span>
+            <span className="hdr-sub">
+              <span className="realtime-badge"/>種名出典：日本鳥学会 日本鳥類目録改訂第8版
+            </span>
+          </div>
+          <div style={{display:"flex",alignItems:"center"}}>
+            <button className={`admin-btn${isAdmin?" active":""}`} onClick={()=>{ isAdmin ? setIsAdmin(false) : setShowAdminLogin(true); }}>
+              {isAdmin ? "🔑 管理者" : "管理者"}
+            </button>
+            {isAdmin && (
+              <button className="admin-btn active" style={{marginRight:"6px"}} onClick={()=>setShowPwChange(true)}>🔄 PW変更</button>
+            )}
+            {activeSpecies && (
+              <button className="post-btn" onClick={()=>setShowForm(true)}>＋ 観察記録を追加</button>
+            )}
+          </div>
+        </div>
+
+        {/* HOME */}
+        {view==="home" && (
+          <>
+            <div className="hero">
+              <div className="hero-lbl">COMMUNITY WILD BIRD LIFE LIST</div>
+              <div className="hero-title">ToriTori<br/>野鳥ライフリスト</div>
+              <div style={{fontSize:"13px",color:"#C8E0B8",marginTop:"8px",letterSpacing:".1em"}}>みんなで作る野鳥の記録</div>
+              <div className="hero-stats">
+                <div><div className="stat-num">{totalSpecies}</div><div className="stat-lbl">掲載種数</div></div>
+                <div><div className="stat-num">{CATEGORIES.length}</div><div className="stat-lbl">目（もく）</div></div>
+                <div style={{cursor:"pointer"}} onClick={()=>setView("allobs")}><div className="stat-num" style={{textDecoration:"underline",textUnderlineOffset:"3px"}}>{loading?"…":totalObs}</div><div className="stat-lbl">観察記録 ▶</div></div>
+              </div>
+            </div>
+            {dbError && <div className="db-error">⚠️ データベース接続エラー：{dbError}</div>}
+            <div className="search-wrap">
+              <input className="search-input" placeholder="🔍  種名で検索（例：メジロ、オオタカ…）" value={search} onChange={e=>handleSearch(e.target.value)} />
+            </div>
+            {search ? (
+              <div className="search-results">
+                {searchResults.length===0
+                  ? <div style={{padding:"14px",color:"#8A7A5A",fontSize:"13px"}}>「{search}」に一致する種が見つかりません</div>
+                  : searchResults.map((r,i)=>(
+                    <div key={i} className="sr-item" onClick={()=>{ setActiveCategory(r.catId); setActiveSpecies(r.name); setView("species"); setSearch(""); setSearchResults([]); }}>
+                      <span className="sr-name">{r.name}</span><span className="sr-cat">{r.catLabel}</span>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="cat-grid">
+                {CATEGORIES.map(c=>(
+                  <div key={c.id} className="cat-card" onClick={()=>{ setActiveCategory(c.id); setView("category"); }}>
+                    <div className="cat-name">{c.label}</div>
+                    <div className="cat-count">{SPECIES_LIST[c.id]?.length||0}種{countByCat(c.id)>0?` · ${countByCat(c.id)}件の記録`:""}</div>
+                    <div className="cat-bar" style={{background:c.color}}/>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ALL OBSERVATIONS */}
+        {view==="allobs" && (
+          <>
+            <div className="page-hdr">
+              <button className="back-btn" onClick={()=>setView("home")}>← トップに戻る</button>
+              <div className="page-title">観察記録一覧</div>
+              <div className="page-sub">記録された全 {totalObs} 件 · 種名をタップして詳細を確認</div>
+            </div>
+            {loading ? <div className="loading">読み込み中…</div> : (
+              (() => {
+                // 種ごとに集計
+                const grouped = {};
+                for (const obs of allObs) {
+                  const key = `${obs.category}__${obs.species}`;
+                  if (!grouped[key]) grouped[key] = { catId:obs.category, species:obs.species, count:0, hasPhoto:false };
+                  grouped[key].count++;
+                  if (obs.photos?.length>0) grouped[key].hasPhoto=true;
+                }
+                const entries = Object.values(grouped).sort((a,b)=>b.count-a.count);
+                const catLabel = (catId) => CATEGORIES.find(c=>c.id===catId)?.label||catId;
+                return entries.length===0
+                  ? <div className="empty">まだ観察記録がありません</div>
+                  : (
+                    <div className="sp-list">
+                      {entries.map((e,i)=>(
+                        <div key={i} className="sp-item" onClick={()=>{ setActiveCategory(e.catId); setActiveSpecies(e.species); setView("species"); }}>
+                          <div>
+                            <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}</span>
+                            <div style={{fontSize:"10px",color:"#8A7A5A",marginTop:"2px"}}>{catLabel(e.catId)}</div>
+                          </div>
+                          <span className="sp-cnt">{e.count}件</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+              })()
+            )}
+          </>
+        )}
+
+        {/* CATEGORY */}
+        {view==="category" && cat && (
+          <>
+            <div className="page-hdr">
+              <button className="back-btn" onClick={()=>{ setView("home"); setActiveCategory(null); }}>← 一覧に戻る</button>
+              <div className="page-title">{cat.label}</div>
+              <div className="page-sub">{speciesList.length}種掲載 · 種名をタップして観察記録を確認・追加</div>
+            </div>
+            <div className="sp-list">
+              {[...speciesList].sort((a,b)=>a.localeCompare(b,"ja")).map(sp=>{
+                const obs=obsFor(cat.id,sp);
+                const hasPhoto=obs.some(o=>o.photos?.length>0);
+                return(
+                  <div key={sp} className="sp-item" onClick={()=>{ setActiveSpecies(sp); setView("species"); }}>
+                    <span className="sp-name">{hasPhoto?"📷 ":""}{sp}</span>
+                    {obs.length>0?<span className="sp-cnt">{obs.length}件</span>:<span className="sp-none">記録なし</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* SPECIES */}
+        {view==="species" && activeSpecies && (
+          <>
+            <div className="sp-detail-hdr">
+              <button className="back-btn" onClick={()=>{ setView("category"); setActiveSpecies(null); }}>← {cat?.label}に戻る</button>
+              <div className="sp-detail-name">{activeSpecies}</div>
+              <div className="sp-detail-cat">{cat?.label}</div>
+            </div>
+            <div className="obs-wrap">
+              <button className="add-btn" onClick={()=>setShowForm(true)}>＋ 観察記録を追加する</button>
+              {loading ? <div className="loading">読み込み中…</div>
+              : obsFor(activeCategory,activeSpecies).length===0
+                ? <div className="empty">まだ観察記録がありません。<br/>最初の記録を追加してみましょう！</div>
+                : obsFor(activeCategory,activeSpecies).map(obs=>(
+                  <div key={obs.id} className="obs-card">
+                    <span className="obs-season">{obs.season}</span>
+                    <div className="obs-meta">📍 {obs.location}　📅 {obs.date}{obs.author ? `　✏️ ${obs.author}` : ""}</div>
+                    {obs.memo && <div className="obs-memo" style={{whiteSpace:"pre-wrap"}}>{obs.memo}</div>}
+                    {obs.photos?.length>0 && (
+                      <div className="obs-photos">
+                        {obs.photos.map((p,pi)=>{
+                          const thumbSrc = typeof p==="object" ? p.thumb : p;
+                          return (
+                            <img key={pi} className="obs-thumb" src={thumbSrc} alt={`写真${pi+1}`}
+                              onClick={()=>setLightbox({allPhotos:obs.photos,index:pi,obs})}/>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {(isAdmin || (currentUserName && obs.author === currentUserName)) && (
+                    <div className="obs-actions">
+                      <button className="obs-edit-btn" onClick={()=>openEdit(obs)}>✏️ 編集</button>
+                      <button className="obs-del-btn" onClick={()=>handleDelete(obs)}>🗑️ 削除</button>
+                    </div>
+                    )}
+                  </div>
+                ))
+              }
+            </div>
+          </>
+        )}
+      </div>}
+
+      {/* 投稿フォーム */}
+      {isLoggedIn && showForm && (activeSpecies || editingObs) && (
+        <div className="overlay" onClick={e=>{ if(e.target.className==="overlay"){setShowForm(false);setPhotos([]);setEditingObs(null);} }}>
+          <div className="sheet">
+            <div className="handle"/>
+            {submitted ? <div className="success">{editingObs ? "✅ 記録を更新しました！" : "✅ 記録が追加されました！"}</div> : (
+              <>
+                <div className="form-title">{editingObs ? "観察記録を編集" : "観察記録を追加"}</div>
+                <div className="form-sub">種名：{activeSpecies||editingObs?.species}（{cat?.label}）</div>
+                <div className="frow">
+                  <div className="fg">
+                    <label className="fl">季節区分</label>
+                    <select className="fs" value={form.season} onChange={e=>setForm({...form,season:e.target.value})}>
+                      {SEASON_TAGS.map(s=><option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="fg">
+                    <label className="fl">観察日 *</label>
+                    <input className="fi" type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/>
+                  </div>
+                </div>
+                <div className="fg">
+                  <label className="fl">記入者名 *</label>
+                  <input className="fi" placeholder="例：とむ" value={form.author} onChange={e=>setForm({...form,author:e.target.value})}/>
+                </div>
+                <div className="fg">
+                  <label className="fl">観察場所 *</label>
+                  <input className="fi" placeholder="例：群馬県　林道" value={form.location} onChange={e=>setForm({...form,location:e.target.value})}/>
+                </div>
+                <div className="fg">
+                  <label className="fl">観察メモ（任意）</label>
+                  <textarea className="ft" placeholder="特徴、行動、気づいたことなど…" value={form.memo} onChange={e=>setForm({...form,memo:e.target.value})}/>
+                </div>
+                <div className="fg">
+                  <label className="fl">写真（最大5枚）</label>
+                  <input ref={fileInputRef} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>handleFiles(e.target.files)}/>
+                  <div className={`photo-drop${dragging?" drag-over":""}`}
+                    onClick={()=>fileInputRef.current?.click()}
+                    onDragOver={e=>{e.preventDefault();setDragging(true);}}
+                    onDragLeave={()=>setDragging(false)}
+                    onDrop={e=>{e.preventDefault();setDragging(false);handleFiles(e.dataTransfer.files);}}>
+                    <div className="photo-drop-icon">📷</div>
+                    <div className="photo-drop-text">タップして写真を選ぶ</div>
+                    <div className="photo-drop-sub">またはドラッグ＆ドロップ · JPEG/PNG</div>
+                  </div>
+                  {uploading && <div className="uploading-msg">画像を処理中…</div>}
+                  {photos.length>0 && (
+                    <div className="photo-previews">
+                      {photos.map((p,i)=>(
+                        <div key={i} className="photo-preview-wrap">
+                          <img className="photo-preview-img" src={p.dataUrl} alt={p.name}/>
+                          <button className="photo-remove" onClick={()=>setPhotos(prev=>prev.filter((_,j)=>j!==i))}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button className="sub-btn" onClick={handleSubmit} disabled={uploading||saving}>
+                  {saving ? "保存中…" : editingObs ? "更新する" : "記録を追加する"}
+                </button>
+                <button className="can-btn" onClick={()=>{setShowForm(false);setPhotos([]);setEditingObs(null);}}>キャンセル</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {lightbox && (
+        <div className="lb-overlay" onClick={()=>setLightbox(null)}>
+          <button className="lb-close" onClick={()=>setLightbox(null)}>×</button>
+          {(() => {
+            const p = lightbox.allPhotos[lightbox.index];
+            const src = typeof p==="object" ? (p.original || p.thumb) : p;
+            const exif = typeof p==="object" ? p.exif : null;
+            return (
+              <>
+                <img className="lb-img" src={src} alt="観察写真" onClick={e=>e.stopPropagation()}/>
+                {exif && (
+                  <div className="lb-exif" onClick={e=>e.stopPropagation()}>
+                    {(exif.camera || exif.lens) && (
+                      <div className="lb-exif-row">
+                        {exif.camera && <span>📷 {exif.camera}</span>}
+                        {exif.lens   && <span>🔭 {exif.lens}</span>}
+                      </div>
+                    )}
+                    <div className="lb-exif-row" style={{marginTop:"4px"}}>
+                      {exif.f   && <span>絞り：{exif.f}</span>}
+                      {exif.ss  && <span>SS：{exif.ss}</span>}
+                      {exif.iso && <span>{exif.iso}</span>}
+                      {exif.ev  && <span>露出補正：{exif.ev}</span>}
+                      {exif.fl  && <span>焦点距離：{exif.fl}</span>}
+                    </div>
+                  </div>
+                )}
+                <div className="lb-meta" onClick={e=>e.stopPropagation()}>
+                  📍 {lightbox.obs.location}　📅 {lightbox.obs.date}
+                  {lightbox.obs.memo && <><br/>{lightbox.obs.memo}</>}
+                </div>
+              </>
+            );
+          })()}
+          {lightbox.allPhotos.length>1 && (
+            <>
+              <div className="lb-nav" onClick={e=>e.stopPropagation()}>
+                <button className="lb-nav-btn" disabled={lightbox.index===0} onClick={()=>setLightbox(l=>({...l,index:l.index-1}))}>← 前</button>
+                <button className="lb-nav-btn" disabled={lightbox.index===lightbox.allPhotos.length-1} onClick={()=>setLightbox(l=>({...l,index:l.index+1}))}>次 →</button>
+              </div>
+              <div className="lb-counter" onClick={e=>e.stopPropagation()}>{lightbox.index+1} / {lightbox.allPhotos.length}</div>
+            </>
+          )}
+        </div>
+      )}
+      {/* 管理者ログインモーダル */}
+      {showAdminLogin && (
+        <div className="admin-modal" onClick={e=>{ if(e.target.className==="admin-modal"){setShowAdminLogin(false);setAdminPwInput("");setAdminPwError(false);} }}>
+          <div className="admin-modal-box">
+            <div className="admin-modal-title">🔑 管理者ログイン</div>
+            <div className="admin-modal-sub">管理者パスワードを入力してください</div>
+            <input className="admin-pw-input" type="password" placeholder="パスワード" value={adminPwInput}
+              onChange={e=>{ setAdminPwInput(e.target.value); setAdminPwError(false); }}
+              onKeyDown={e=>{ if(e.key==="Enter") handleAdminLogin(); }} />
+            {adminPwError && <div className="admin-pw-error">パスワードが正しくありません</div>}
+            <button className="admin-login-btn" onClick={handleAdminLogin}>ログイン</button>
+            <button className="admin-cancel-btn" onClick={()=>{ setShowAdminLogin(false); setAdminPwInput(""); setAdminPwError(false); }}>キャンセル</button>
+          </div>
+        </div>
+      )}
+
+      {/* 月次パスワード変更モーダル */}
+      {showPwChange && (
+        <div className="admin-modal" onClick={e=>{ if(e.target.className==="admin-modal"){setShowPwChange(false);setNewPwInput("");setPwChangeMsg("");} }}>
+          <div className="admin-modal-box">
+            <div className="admin-modal-title">🔄 アクセスパスワード変更</div>
+            <div className="admin-modal-sub">現在のパスワード：<strong>{accessPw}</strong></div>
+            <input className="admin-pw-input" type="text" placeholder="新しいパスワード" value={newPwInput}
+              onChange={e=>setNewPwInput(e.target.value)}
+              onKeyDown={e=>{ if(e.key==="Enter") handlePwChange(); }} />
+            {pwChangeMsg && <div style={{fontSize:"12px",color:"#4A6B3C",marginBottom:"8px"}}>{pwChangeMsg}</div>}
+            <button className="admin-login-btn" onClick={handlePwChange}>変更する</button>
+            <button className="admin-cancel-btn" onClick={()=>{ setShowPwChange(false); setNewPwInput(""); setPwChangeMsg(""); }}>キャンセル</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
