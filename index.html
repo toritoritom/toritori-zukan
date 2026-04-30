@@ -300,16 +300,10 @@ function App(){
     setSaving(true);
     if (editingObs) {
       // 編集モード：新規追加分のみStorageにアップロード
-      const photoData = await Promise.all(photos.map(async p => {
-        if (p.dataUrl !== undefined && p.originalFile) {
-          // 新しく追加された写真
-          const origUrl = await uploadOriginal(p.originalFile);
-          return { thumb: p.dataUrl, original: origUrl || p.dataUrl, exif: p.exif || null };
-        }
-        // 既存の写真（すでにオブジェクト or 文字列）
-        if (typeof p === "object" && p.thumb) return p;
-        return { thumb: p, original: p };
-      }));
+      const photoData = photos.map(p => {
+        if (typeof p === "object" && p.thumb && !p.originalFile) return p; // 既存写真
+        return { thumb: p.dataUrl, original: p.dataUrl, exif: p.exif || null }; // 新規追加
+      });
       const { error } = await supabase.from("observations").update({
         season:   form.season,
         location: form.location,
@@ -324,10 +318,11 @@ function App(){
         ? {...o, season:form.season, location:form.location, date:form.date, memo:form.memo, author:form.author, photos:photoData}
         : o));
     } else {
-      // 新規追加：Storageにオリジナルをアップロード
-      const photoData = await Promise.all(photos.map(async p => {
-        const origUrl = p.originalFile ? await uploadOriginal(p.originalFile) : null;
-        return { thumb: p.dataUrl, original: origUrl || p.dataUrl, exif: p.exif || null };
+      // 新規追加：圧縮版をDBに保存（Storageは使わない）
+      const photoData = photos.map(p => ({
+        thumb: p.dataUrl,
+        original: p.dataUrl, // 圧縮版をオリジナルとしても使用
+        exif: p.exif || null,
       }));
       const { data: inserted, error } = await supabase.from("observations").insert([{
         category: activeCategory,
