@@ -133,6 +133,62 @@ async function uploadOriginal(file) {
 
 const ADMIN_PASSWORD = "Toritori3150";
 
+function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpecies }) {
+  const [filterAuthor, setFilterAuthor] = useState("");
+  const authors = [...new Set(allObs.map(o=>o.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ja"));
+  const filteredObs = filterAuthor ? allObs.filter(o=>o.author===filterAuthor) : allObs;
+  const grouped = {};
+  for (const obs of filteredObs) {
+    const key = `${obs.category}__${obs.species}`;
+    if (!grouped[key]) grouped[key] = { catId:obs.category, species:obs.species, count:0, hasPhoto:false };
+    grouped[key].count++;
+    if (obs.photos?.length>0) grouped[key].hasPhoto=true;
+  }
+  const entries = Object.values(grouped).sort((a,b)=>b.count-a.count);
+  const catLabel = (catId) => CATEGORIES.find(c=>c.id===catId)?.label||catId;
+  const btnStyle = (active) => ({
+    padding:"5px 14px", borderRadius:"20px", border:"1.5px solid",
+    borderColor: active?"#7A9B6A":"#C8BC9E",
+    background: active?"#E8F0E4":"#FBF8F0",
+    color: active?"#3A6B2A":"#6A5A3A",
+    fontSize:"12px", cursor:"pointer", fontFamily:"'Noto Serif JP',serif"
+  });
+  return (
+    <>
+      <div className="page-hdr">
+        <button className="back-btn" onClick={onBack}>← トップに戻る</button>
+        <div className="page-title">観察記録一覧</div>
+        <div className="page-sub">{filterAuthor ? `${filterAuthor}の記録 ${entries.length}種` : `全 ${totalObs} 件 · 種名をタップして詳細を確認`}</div>
+      </div>
+      {authors.length > 0 && (
+        <div style={{padding:"10px 18px 4px",display:"flex",gap:"8px",flexWrap:"wrap"}}>
+          <button style={btnStyle(!filterAuthor)} onClick={()=>setFilterAuthor("")}>全員</button>
+          {authors.map(a=>(
+            <button key={a} style={btnStyle(filterAuthor===a)} onClick={()=>setFilterAuthor(a)}>{a}</button>
+          ))}
+        </div>
+      )}
+      {loading ? <div className="loading">読み込み中…</div>
+      : entries.length===0
+        ? <div className="empty">記録がありません</div>
+        : (
+          <div className="sp-list">
+            {entries.map((e,i)=>(
+              <div key={i} className="sp-item" onClick={()=>onSelectSpecies(e.catId, e.species)}>
+                <div>
+                  <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}</span>
+                  <div style={{fontSize:"10px",color:"#8A7A5A",marginTop:"2px"}}>{catLabel(e.catId)}</div>
+                </div>
+                <span className="sp-cnt">{e.count}件</span>
+              </div>
+            ))}
+          </div>
+        )
+      }
+    </>
+  );
+}
+
 function App(){
   const [allObs, setAllObs]           = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -545,64 +601,15 @@ function App(){
 
         {/* ALL OBSERVATIONS */}
         {view==="allobs" && (
-          ()=>{
-            const authors = [...new Set(allObs.map(o=>o.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ja"));
-            const [filterAuthor, setFilterAuthor] = React.useState("");
-            const filteredObs = filterAuthor ? allObs.filter(o=>o.author===filterAuthor) : allObs;
-            const grouped = {};
-            for (const obs of filteredObs) {
-              const key = `${obs.category}__${obs.species}`;
-              if (!grouped[key]) grouped[key] = { catId:obs.category, species:obs.species, count:0, hasPhoto:false };
-              grouped[key].count++;
-              if (obs.photos?.length>0) grouped[key].hasPhoto=true;
-            }
-            const entries = Object.values(grouped).sort((a,b)=>b.count-a.count);
-            const catLabel = (catId) => CATEGORIES.find(c=>c.id===catId)?.label||catId;
-            return (
-              <>
-                <div className="page-hdr">
-                  <button className="back-btn" onClick={()=>setView("home")}>← トップに戻る</button>
-                  <div className="page-title">観察記録一覧</div>
-                  <div className="page-sub">{filterAuthor ? `${filterAuthor}の記録 ${entries.length}種` : `全 ${totalObs} 件 · 種名をタップして詳細を確認`}</div>
-                </div>
-                {/* 記入者フィルター */}
-                {authors.length > 0 && (
-                  <div style={{padding:"10px 18px 4px",display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                    <button
-                      onClick={()=>setFilterAuthor("")}
-                      style={{padding:"5px 14px",borderRadius:"20px",border:"1.5px solid",borderColor:!filterAuthor?"#7A9B6A":"#C8BC9E",background:!filterAuthor?"#E8F0E4":"#FBF8F0",color:!filterAuthor?"#3A6B2A":"#6A5A3A",fontSize:"12px",cursor:"pointer",fontFamily:"'Noto Serif JP',serif"}}>
-                      全員
-                    </button>
-                    {authors.map(a=>(
-                      <button key={a}
-                        onClick={()=>setFilterAuthor(a)}
-                        style={{padding:"5px 14px",borderRadius:"20px",border:"1.5px solid",borderColor:filterAuthor===a?"#7A9B6A":"#C8BC9E",background:filterAuthor===a?"#E8F0E4":"#FBF8F0",color:filterAuthor===a?"#3A6B2A":"#6A5A3A",fontSize:"12px",cursor:"pointer",fontFamily:"'Noto Serif JP',serif"}}>
-                        {a}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {loading ? <div className="loading">読み込み中…</div>
-                : entries.length===0
-                  ? <div className="empty">記録がありません</div>
-                  : (
-                    <div className="sp-list">
-                      {entries.map((e,i)=>(
-                        <div key={i} className="sp-item" onClick={()=>{ setActiveCategory(e.catId); setActiveSpecies(e.species); setView("species"); }}>
-                          <div>
-                            <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}</span>
-                            <div style={{fontSize:"10px",color:"#8A7A5A",marginTop:"2px"}}>{catLabel(e.catId)}</div>
-                          </div>
-                          <span className="sp-cnt">{e.count}件</span>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                }
-              </>
-            );
-          }
-        )()}
+          <AllObsView
+            allObs={allObs}
+            loading={loading}
+            totalObs={totalObs}
+            CATEGORIES={CATEGORIES}
+            onBack={()=>setView("home")}
+            onSelectSpecies={(catId,sp)=>{ setActiveCategory(catId); setActiveSpecies(sp); setView("species"); }}
+          />
+        )}
 
         {/* CATEGORY */}
         {view==="category" && cat && (
