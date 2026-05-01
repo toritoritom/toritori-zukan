@@ -80,7 +80,7 @@ const SPECIES_LIST = {
   inko:["ワカケホンセイインコ","ホンセイインコ","オキナインコ","コザクラインコ","セキセイインコ"],
 };
 
-const SEASON_TAGS = ["留鳥","漂鳥","夏鳥","冬鳥","旅鳥","迷鳥","外来種"];
+const SEASON_TAGS = ["留鳥","夏鳥","冬鳥","旅鳥","迷鳥","外来種"];
 const totalSpecies = Object.values(SPECIES_LIST).reduce((s,a)=>s+a.length,0);
 
 function compressImage(file,maxW=1200,quality=0.78){
@@ -203,7 +203,7 @@ function App(){
   const [showForm, setShowForm]       = useState(false);
   const [search, setSearch]           = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [form, setForm]               = useState({season:"",prefecture:"",environment:"",location_note:"",date:"",memo:"",author: localStorage.getItem("toritori_username") || ""});
+  const [form, setForm]               = useState({season:"留鳥",location:"",date:"",memo:"",author: localStorage.getItem("toritori_username") || ""});
   const [photos, setPhotos]           = useState([]);
   const [dragging, setDragging]       = useState(false);
   const [submitted, setSubmitted]     = useState(false);
@@ -302,10 +302,7 @@ function App(){
   };
 
   const handleSubmit = async () => {
-    if (!form.season || !form.prefecture || !form.environment || !form.date) {
-      alert("渡り区分・都道府県・観察環境・観察日は必須です");
-      return;
-    }
+    if (!form.location || !form.date) { alert("観察場所・観察日は必須です"); return; }
     setSaving(true);
     if (editingObs) {
       // 編集モード：新規追加分のみStorageにアップロード
@@ -314,20 +311,17 @@ function App(){
         return { thumb: p.dataUrl, original: p.dataUrl, exif: p.exif || null }; // 新規追加
       });
       const { error } = await supabase.from("observations").update({
-        season:         form.season,
-        location:       [form.prefecture, form.environment, form.location_note].filter(Boolean).join("　"),
-        prefecture:     form.prefecture,
-        environment:    form.environment,
-        location_note:  form.location_note,
-        date:           form.date,
-        memo:           form.memo,
-        author:         form.author,
-        photos:         photoData,
+        season:   form.season,
+        location: form.location,
+        date:     form.date,
+        memo:     form.memo,
+        author:   form.author,
+        photos:   photoData,
       }).eq("id", editingObs.id);
       setSaving(false);
       if (error) { alert("更新に失敗しました："+error.message); return; }
       setAllObs(prev => prev.map(o => o.id===editingObs.id
-        ? {...o, season:form.season, location:[form.prefecture,form.environment,form.location_note].filter(Boolean).join("　"), prefecture:form.prefecture, environment:form.environment, location_note:form.location_note, date:form.date, memo:form.memo, author:form.author, photos:photoData}
+        ? {...o, season:form.season, location:form.location, date:form.date, memo:form.memo, author:form.author, photos:photoData}
         : o));
     } else {
       // 新規追加：圧縮版をDBに保存（Storageは使わない）
@@ -337,23 +331,20 @@ function App(){
         exif: p.exif || null,
       }));
       const { data: inserted, error } = await supabase.from("observations").insert([{
-        category:      activeCategory,
-        species:       activeSpecies,
-        season:        form.season,
-        location:      [form.prefecture, form.environment, form.location_note].filter(Boolean).join("　"),
-        prefecture:    form.prefecture,
-        environment:   form.environment,
-        location_note: form.location_note,
-        date:          form.date,
-        memo:          form.memo,
-        author:        form.author,
-        photos:        photoData,
+        category: activeCategory,
+        species:  activeSpecies,
+        season:   form.season,
+        location: form.location,
+        date:     form.date,
+        memo:     form.memo,
+        author:   form.author,
+        photos:   photoData,
       }]).select().single();
       setSaving(false);
       if (error) { alert("保存に失敗しました："+error.message); return; }
       setAllObs(prev => [inserted, ...prev]);
     }
-    setForm({season:"",prefecture:"",environment:"",location_note:"",date:"",memo:"",author: localStorage.getItem("toritori_username")||""});
+    setForm({season:"留鳥",location:"",date:"",memo:"",author: localStorage.getItem("toritori_username")||""});
     setPhotos([]);
     setEditingObs(null);
     // 記入者名を記憶
@@ -394,7 +385,7 @@ function App(){
 
   const openEdit = (obs) => {
     setEditingObs(obs);
-    setForm({ season:obs.season||"留鳥", prefecture:obs.prefecture||"", environment:obs.environment||"", location_note:obs.location_note||"", date:obs.date||"", memo:obs.memo||"", author:obs.author||"" });
+    setForm({ season:obs.season||"留鳥", location:obs.location||"", date:obs.date||"", memo:obs.memo||"", author:obs.author||"" });
     setPhotos(obs.photos||[]);
     setShowForm(true);
   };
@@ -741,34 +732,25 @@ function App(){
               <>
                 <div className="form-title">{editingObs ? "観察記録を編集" : "観察記録を追加"}</div>
                 <div className="form-sub">種名：{activeSpecies||editingObs?.species}（{cat?.label}）</div>
-                <div className="fg">
-                  <label className="fl">渡り区分 *</label>
-                  <select className="fs" value={form.season} onChange={e=>setForm({...form,season:e.target.value})}>
-                    <option value="">選択してください</option>
-                    {SEASON_TAGS.map(s=><option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div className="fg">
-                  <label className="fl">観察日 *</label>
-                  <input className="fi" type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/>
+                <div className="frow">
+                  <div className="fg">
+                    <label className="fl">季節区分</label>
+                    <select className="fs" value={form.season} onChange={e=>setForm({...form,season:e.target.value})}>
+                      {SEASON_TAGS.map(s=><option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="fg">
+                    <label className="fl">観察日 *</label>
+                    <input className="fi" type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/>
+                  </div>
                 </div>
                 <div className="fg">
                   <label className="fl">記入者名 *</label>
                   <input className="fi" placeholder="例：とむ" value={form.author} onChange={e=>setForm({...form,author:e.target.value})}/>
                 </div>
                 <div className="fg">
-                  <label className="fl">都道府県 *</label>
-                  <select className="fs" value={form.prefecture} onChange={e=>setForm({...form,prefecture:e.target.value})}>
-                    <option value="">選択してください</option>
-                    {PREFECTURES.map(p=><option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div className="fg">
-                  <label className="fl">観察環境 *</label>
-                  <select className="fs" value={form.environment} onChange={e=>setForm({...form,environment:e.target.value})}>
-                    <option value="">選択してください</option>
-                    {ENVIRONMENTS.map(e=><option key={e} value={e}>{e}</option>)}
-                  </select>
+                  <label className="fl">観察場所 *</label>
+                  <input className="fi" placeholder="例：群馬県　林道" value={form.location} onChange={e=>setForm({...form,location:e.target.value})}/>
                 </div>
                 <div className="fg">
                   <label className="fl">観察メモ（任意）</label>
