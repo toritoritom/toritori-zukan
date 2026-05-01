@@ -486,7 +486,7 @@ function App(){
         .realtime-badge{display:inline-block;width:7px;height:7px;background:#6BCB6B;border-radius:50%;margin-right:5px;animation:pulse 2s infinite}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
         .overlay{position:fixed;inset:0;background:rgba(44,59,40,.5);z-index:200;display:flex;align-items:flex-end}
-        .sheet{background:#F5F0E8;width:100%;max-height:92vh;overflow-y:auto;border-radius:16px 16px 0 0;padding:18px}
+        .sheet{background:#F5F0E8;width:100%;max-height:92vh;overflow-y:auto;overflow-x:hidden;border-radius:16px 16px 0 0;padding:18px;box-sizing:border-box}
         .handle{width:36px;height:4px;background:#C8BC9E;border-radius:2px;margin:0 auto 16px}
         .form-title{font-family:'Zen Old Mincho',serif;font-size:16px;color:#2C3B28;margin-bottom:3px;letter-spacing:.08em}
         .form-sub{font-size:11px;color:#8A7A5A;margin-bottom:14px}
@@ -736,18 +736,16 @@ function App(){
               <>
                 <div className="form-title">{editingObs ? "観察記録を編集" : "観察記録を追加"}</div>
                 <div className="form-sub">種名：{activeSpecies||editingObs?.species}（{cat?.label}）</div>
-                <div className="frow">
-                  <div className="fg">
-                    <label className="fl">渡り区分 *</label>
-                    <select className="fs" value={form.season} onChange={e=>setForm({...form,season:e.target.value})}>
-                      <option value="">選択してください</option>
-                      {SEASON_TAGS.map(s=><option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
-                  <div className="fg">
-                    <label className="fl">観察日 *</label>
-                    <input className="fi" type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/>
-                  </div>
+                <div className="fg">
+                  <label className="fl">渡り区分 *</label>
+                  <select className="fs" value={form.season} onChange={e=>setForm({...form,season:e.target.value})}>
+                    <option value="">選択してください</option>
+                    {SEASON_TAGS.map(s=><option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className="fg">
+                  <label className="fl">観察日 *</label>
+                  <input className="fi" type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/>
                 </div>
                 <div className="fg">
                   <label className="fl">記入者名 *</label>
