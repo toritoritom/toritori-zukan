@@ -302,7 +302,10 @@ function App(){
   };
 
   const handleSubmit = async () => {
-    if (!form.location || !form.date || !form.season) { alert("渡り区分・観察場所・観察日は必須です"); setSaving(false); return; }
+    if (!form.season || !form.prefecture || !form.environment || !form.date) {
+      alert("渡り区分・都道府県・観察環境・観察日は必須です");
+      return;
+    }
     setSaving(true);
     if (editingObs) {
       // 編集モード：新規追加分のみStorageにアップロード
