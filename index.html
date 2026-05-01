@@ -308,12 +308,11 @@ function App(){
     setSaving(true);
     const location = [form.prefecture, form.environment].join("　");
     if (editingObs) {
-      // 編集モード：新規追加分のみStorageにアップロード
+      // 編集モード
       const photoData = photos.map(p => {
-        if (typeof p === "object" && p.thumb && !p.originalFile) return p; // 既存写真
-        return { thumb: p.dataUrl, original: p.dataUrl, exif: p.exif || null }; // 新規追加
+        if (typeof p === "object" && p.thumb && !p.originalFile) return p;
+        return { thumb: p.dataUrl, original: p.dataUrl, exif: p.exif || null };
       });
-      const location = [form.prefecture, form.environment].join("　");
       const { error } = await supabase.from("observations").update({
         season:   form.season,
         location: location,
