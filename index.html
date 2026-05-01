@@ -681,7 +681,6 @@ function App(){
                     {obs.pinned && <span className="pin-badge">📌 固定</span>}
                     <span className="obs-season">{obs.season}</span>
                     <div className="obs-meta">📍 {obs.location}　📅 {obs.date}{obs.author ? `　✏️ ${obs.author}` : ""}</div>
-                    {obs.memo && <div className="obs-memo" style={{whiteSpace:"pre-wrap"}}>{obs.memo}</div>}
                     {obs.photos?.length>0 && (
                       <div className="obs-photos">
                         {obs.photos.map((p,pi)=>{
@@ -693,6 +692,7 @@ function App(){
                         })}
                       </div>
                     )}
+                    {obs.memo && <div className="obs-memo" style={{whiteSpace:"pre-wrap"}}>{obs.memo}</div>}
                     <div className="obs-footer">
                       <button className={`stamp-btn${myStamp?" stamped":""}`} onClick={()=>handleStamp(obs)}>
                         👀 {myStamp ? "見た！" : "見た"}{(obs.stamps||0)>0 && <span style={{fontWeight:"600"}}>{obs.stamps}</span>}
