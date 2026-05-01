@@ -278,8 +278,10 @@ function App(){
     return ()=>{ supabase.removeChannel(channel); };
   },[]);
 
-  const obsFor = (catId, sp) =>
-    allObs.filter(o => o.category===catId && o.species===sp);
+  const obsFor = (catId, sp) => {
+    const list = allObs.filter(o => o.category===catId && o.species===sp);
+    return [...list.filter(o=>o.pinned), ...list.filter(o=>!o.pinned)];
+  };
 
   const handleFiles = async (files) => {
     setUploading(true);
@@ -353,6 +355,29 @@ function App(){
     const { error } = await supabase.from("observations").delete().eq("id", obs.id);
     if (error) { alert("削除に失敗しました："+error.message); return; }
     setAllObs(prev => prev.filter(o => o.id !== obs.id));
+  };
+
+  const handlePin = async (obs) => {
+    const newPinned = !obs.pinned;
+    const { error } = await supabase.from("observations").update({ pinned: newPinned }).eq("id", obs.id);
+    if (error) { alert("更新に失敗しました："+error.message); return; }
+    setAllObs(prev => prev.map(o => o.id===obs.id ? {...o, pinned: newPinned} : o));
+  };
+
+  const handleStamp = async (obs) => {
+    const uid = currentUserName || "anonymous_" + Math.random().toString(36).slice(2,8);
+    if (!currentUserName) { setCurrentUserName(uid); localStorage.setItem("toritori_username", uid); }
+    const stampUsers = obs.stamp_users || [];
+    const alreadyStamped = stampUsers.includes(uid);
+    const newStampUsers = alreadyStamped
+      ? stampUsers.filter(u => u !== uid)
+      : [...stampUsers, uid];
+    const newStamps = newStampUsers.length;
+    const { error } = await supabase.from("observations")
+      .update({ stamps: newStamps, stamp_users: newStampUsers })
+      .eq("id", obs.id);
+    if (error) { alert("スタンプに失敗しました："+error.message); return; }
+    setAllObs(prev => prev.map(o => o.id===obs.id ? {...o, stamps:newStamps, stamp_users:newStampUsers} : o));
   };
 
   const openEdit = (obs) => {
@@ -429,7 +454,14 @@ function App(){
         .obs-wrap{padding:12px 18px 20px}
         .add-btn{width:100%;padding:11px;border:2px dashed #A8C098;border-radius:10px;background:none;color:#5C7A4E;font-size:13px;font-family:'Noto Serif JP',serif;cursor:pointer;margin-bottom:12px;letter-spacing:.05em}
         .add-btn:hover{background:#EEF4EA}
-        .obs-card{background:#FBF8F0;border:1.5px solid #D8CEB0;border-radius:10px;padding:13px;margin-bottom:12px}
+        .obs-card{background:#FBF8F0;border:1.5px solid #D8CEB0;border-radius:10px;padding:13px;margin-bottom:12px;position:relative}
+        .obs-card.pinned{border-color:#7A9B6A;background:#F0F7EC}
+        .pin-badge{position:absolute;top:10px;right:10px;font-size:11px;color:#5C7A4E;background:#D8EDD0;padding:2px 8px;border-radius:10px;letter-spacing:.05em}
+        .obs-footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+        .stamp-btn{background:none;border:1.5px solid #C8BC9E;border-radius:20px;padding:5px 14px;font-size:13px;cursor:pointer;font-family:'Noto Serif JP',serif;color:#6A5A3A;display:flex;align-items:center;gap:5px;transition:all .15s}
+        .stamp-btn.stamped{background:#FFF0D0;border-color:#D4A840;color:#8A6020}
+        .stamp-btn:hover{background:#F5EDD8}
+        .obs-actions{display:flex;gap:8px}
         .obs-season{display:inline-block;font-size:10px;padding:2px 9px;border-radius:10px;background:#E8F0E4;color:#4A6B3C;margin-bottom:7px}
         .obs-meta{font-size:12px;color:#8A7A5A;line-height:1.8}
         .obs-memo{font-size:13px;color:#4A3C2A;margin-top:7px;line-height:1.7}
@@ -642,8 +674,11 @@ function App(){
               {loading ? <div className="loading">読み込み中…</div>
               : obsFor(activeCategory,activeSpecies).length===0
                 ? <div className="empty">まだ観察記録がありません。<br/>最初の記録を追加してみましょう！</div>
-                : obsFor(activeCategory,activeSpecies).map(obs=>(
-                  <div key={obs.id} className="obs-card">
+                : obsFor(activeCategory,activeSpecies).map(obs=>{
+                  const myStamp = (obs.stamp_users||[]).includes(currentUserName);
+                  return (
+                  <div key={obs.id} className={`obs-card${obs.pinned?" pinned":""}`}>
+                    {obs.pinned && <span className="pin-badge">📌 固定</span>}
                     <span className="obs-season">{obs.season}</span>
                     <div className="obs-meta">📍 {obs.location}　📅 {obs.date}{obs.author ? `　✏️ ${obs.author}` : ""}</div>
                     {obs.memo && <div className="obs-memo" style={{whiteSpace:"pre-wrap"}}>{obs.memo}</div>}
@@ -658,14 +693,25 @@ function App(){
                         })}
                       </div>
                     )}
-                    {(isAdmin || (currentUserName && obs.author === currentUserName)) && (
-                    <div className="obs-actions">
-                      <button className="obs-edit-btn" onClick={()=>openEdit(obs)}>✏️ 編集</button>
-                      <button className="obs-del-btn" onClick={()=>handleDelete(obs)}>🗑️ 削除</button>
+                    <div className="obs-footer">
+                      <button className={`stamp-btn${myStamp?" stamped":""}`} onClick={()=>handleStamp(obs)}>
+                        👀 {myStamp ? "見た！" : "見た"}{(obs.stamps||0)>0 && <span style={{fontWeight:"600"}}>{obs.stamps}</span>}
+                      </button>
+                      {(isAdmin || (currentUserName && obs.author === currentUserName)) && (
+                        <div className="obs-actions">
+                          {isAdmin && (
+                            <button className="obs-edit-btn" style={{background:obs.pinned?"#D8EDD0":"none",borderColor:obs.pinned?"#7A9B6A":"#C8BC9E",color:obs.pinned?"#3A6B2A":"#6A5A3A"}} onClick={()=>handlePin(obs)}>
+                              {obs.pinned ? "📌 固定中" : "📌 固定"}
+                            </button>
+                          )}
+                          <button className="obs-edit-btn" onClick={()=>openEdit(obs)}>✏️ 編集</button>
+                          <button className="obs-del-btn" onClick={()=>handleDelete(obs)}>🗑️ 削除</button>
+                        </div>
+                      )}
                     </div>
-                    )}
                   </div>
-                ))
+                  );
+                })
               }
             </div>
           </>
