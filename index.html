@@ -80,7 +80,7 @@ const SPECIES_LIST = {
   inko:["ワカケホンセイインコ","ホンセイインコ","オキナインコ","コザクラインコ","セキセイインコ"],
 };
 
-const SEASON_TAGS = ["留鳥","夏鳥","冬鳥","旅鳥","迷鳥","外来種"];
+const SEASON_TAGS = ["留鳥","漂鳥","夏鳥","冬鳥","旅鳥","迷鳥","外来種"];
 const totalSpecies = Object.values(SPECIES_LIST).reduce((s,a)=>s+a.length,0);
 
 function compressImage(file,maxW=1200,quality=0.78){
@@ -734,7 +734,7 @@ function App(){
                 <div className="form-sub">種名：{activeSpecies||editingObs?.species}（{cat?.label}）</div>
                 <div className="frow">
                   <div className="fg">
-                    <label className="fl">季節区分</label>
+                    <label className="fl">渡り区分</label>
                     <select className="fs" value={form.season} onChange={e=>setForm({...form,season:e.target.value})}>
                       {SEASON_TAGS.map(s=><option key={s} value={s}>{s}</option>)}
                     </select>
