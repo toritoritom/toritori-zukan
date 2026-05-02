@@ -165,9 +165,14 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
       {authors.length > 0 && (
         <div style={{padding:"10px 18px 4px",display:"flex",gap:"8px",flexWrap:"wrap"}}>
           <button style={btnStyle(!filterAuthor)} onClick={()=>setFilterAuthor("")}>全員</button>
-          {authors.map(a=>(
-            <button key={a} style={btnStyle(filterAuthor===a)} onClick={()=>setFilterAuthor(a)}>{a}</button>
-          ))}
+          {authors.map(a=>{
+            const speciesCount = new Set(allObs.filter(o=>o.author===a).map(o=>`${o.category}__${o.species}`)).size;
+            return (
+              <button key={a} style={btnStyle(filterAuthor===a)} onClick={()=>setFilterAuthor(a)}>
+                {a} <span style={{fontSize:"10px",opacity:.8}}>{speciesCount}種</span>
+              </button>
+            );
+          })}
         </div>
       )}
       {loading ? <div className="loading">読み込み中…</div>
@@ -602,7 +607,12 @@ function App(){
               <div className="hero-stats">
                 <div><div className="stat-num">{totalSpecies}</div><div className="stat-lbl">掲載種数</div></div>
                 <div><div className="stat-num">{CATEGORIES.length}</div><div className="stat-lbl">目（もく）</div></div>
-                <div style={{cursor:"pointer"}} onClick={()=>setView("allobs")}><div className="stat-num" style={{textDecoration:"underline",textUnderlineOffset:"3px"}}>{loading?"…":totalObs}</div><div className="stat-lbl">観察記録 ▶</div></div>
+                <div style={{cursor:"pointer"}} onClick={()=>setView("allobs")}>
+                  <div className="stat-num" style={{textDecoration:"underline",textUnderlineOffset:"3px"}}>
+                    {loading?"…":new Set(allObs.map(o=>`${o.category}__${o.species}`)).size}
+                  </div>
+                  <div className="stat-lbl">観察種数 ▶</div>
+                </div>
               </div>
             </div>
             {dbError && <div className="db-error">⚠️ データベース接続エラー：{dbError}</div>}
