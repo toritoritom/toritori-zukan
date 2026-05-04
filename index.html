@@ -137,23 +137,31 @@ const ADMIN_PASSWORD = "Toritori3150";
 
 function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpecies }) {
   const [filterAuthor, setFilterAuthor] = useState("");
-  const [sortMode, setSortMode] = useState("count"); // count | alpha | category
+  const [sortMode, setSortMode] = useState("count"); // count | alpha | category | recent
   const authors = [...new Set(allObs.map(o=>o.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ja"));
   const filteredObs = filterAuthor ? allObs.filter(o=>o.author===filterAuthor) : allObs;
   const grouped = {};
   for (const obs of filteredObs) {
     const key = `${obs.category}__${obs.species}`;
-    if (!grouped[key]) grouped[key] = { catId:obs.category, species:obs.species, count:0, hasPhoto:false };
+    if (!grouped[key]) grouped[key] = { catId:obs.category, species:obs.species, count:0, hasPhoto:false, latestId:obs.id, latestCreatedAt:obs.created_at };
     grouped[key].count++;
     if (obs.photos?.length>0) grouped[key].hasPhoto=true;
+    if (obs.created_at > grouped[key].latestCreatedAt) {
+      grouped[key].latestCreatedAt = obs.created_at;
+      grouped[key].latestId = obs.id;
+    }
   }
+  // NEW判定：追加順で上位5件の種
+  const recentEntries = Object.values(grouped).sort((a,b)=>b.latestCreatedAt?.localeCompare(a.latestCreatedAt||"")||0).slice(0,5);
+  const newSpeciesKeys = new Set(recentEntries.map(e=>`${e.catId}__${e.species}`));
   const entries = Object.values(grouped).sort((a,b)=>{
     if (sortMode==="alpha")    return a.species.localeCompare(b.species,"ja");
     if (sortMode==="category") {
       const ci = (id) => CATEGORIES.findIndex(c=>c.id===id);
       return ci(a.catId)!==ci(b.catId) ? ci(a.catId)-ci(b.catId) : a.species.localeCompare(b.species,"ja");
     }
-    return b.count - a.count; // count
+    if (sortMode==="recent")   return (b.latestCreatedAt||"").localeCompare(a.latestCreatedAt||"");
+    return b.count - a.count;
   });
   const catLabel = (catId) => CATEGORIES.find(c=>c.id===catId)?.label||catId;
   const btnStyle = (active) => ({
@@ -198,6 +206,7 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
         <button style={sortBtnStyle(sortMode==="count")}    onClick={()=>setSortMode("count")}>記録数順</button>
         <button style={sortBtnStyle(sortMode==="alpha")}    onClick={()=>setSortMode("alpha")}>あいうえお</button>
         <button style={sortBtnStyle(sortMode==="category")} onClick={()=>setSortMode("category")}>目別</button>
+        <button style={sortBtnStyle(sortMode==="recent")}   onClick={()=>setSortMode("recent")}>追加順</button>
       </div>
       {loading ? <div className="loading">読み込み中…</div>
       : entries.length===0
@@ -214,25 +223,31 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
                     <div style={{padding:"10px 12px 4px",fontSize:"11px",color:"#8A7A5A",letterSpacing:".1em",borderBottom:"1px solid #D8CEB0",marginTop:"6px"}}>
                       {cat.label}（{catEntries.length}種）
                     </div>
-                    {catEntries.map((e,i)=>(
-                      <div key={i} className="sp-item" onClick={()=>onSelectSpecies(e.catId, e.species)}>
-                        <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}</span>
-                        <span className="sp-cnt">{e.count}件</span>
-                      </div>
-                    ))}
+                    {catEntries.map((e,i)=>{
+                      const isNew = newSpeciesKeys.has(`${e.catId}__${e.species}`);
+                      return (
+                        <div key={i} className="sp-item" onClick={()=>onSelectSpecies(e.catId, e.species)}>
+                          <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}{isNew&&<span style={{marginLeft:"6px",fontSize:"10px",background:"#C04040",color:"#fff",padding:"1px 6px",borderRadius:"8px",letterSpacing:".05em"}}>NEW</span>}</span>
+                          <span className="sp-cnt">{e.count}件</span>
+                        </div>
+                      );
+                    })}
                   </React.Fragment>
                 );
               })
             ) : (
-              entries.map((e,i)=>(
-                <div key={i} className="sp-item" onClick={()=>onSelectSpecies(e.catId, e.species)}>
-                  <div>
-                    <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}</span>
-                    <div style={{fontSize:"10px",color:"#8A7A5A",marginTop:"2px"}}>{catLabel(e.catId)}</div>
+              entries.map((e,i)=>{
+                const isNew = newSpeciesKeys.has(`${e.catId}__${e.species}`);
+                return (
+                  <div key={i} className="sp-item" onClick={()=>onSelectSpecies(e.catId, e.species)}>
+                    <div>
+                      <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}{isNew&&<span style={{marginLeft:"6px",fontSize:"10px",background:"#C04040",color:"#fff",padding:"1px 6px",borderRadius:"8px",letterSpacing:".05em"}}>NEW</span>}</span>
+                      <div style={{fontSize:"10px",color:"#8A7A5A",marginTop:"2px"}}>{catLabel(e.catId)}</div>
+                    </div>
+                    <span className="sp-cnt">{e.count}件</span>
                   </div>
-                  <span className="sp-cnt">{e.count}件</span>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )
