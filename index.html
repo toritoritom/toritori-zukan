@@ -180,7 +180,6 @@ function JapanMapGrid({ observedPrefs }) {
 function JapanMap({ observedPrefs }) {
   const [mapData, setMapData] = useState(null);
   const [useFallback, setUseFallback] = useState(false);
-  const W=400, H=480;
 
   useEffect(()=>{
     const d3=window.d3;
@@ -188,29 +187,33 @@ function JapanMap({ observedPrefs }) {
     fetch('https://cdn.jsdelivr.net/gh/dataofjapan/land@master/japan.geojson')
       .then(r=>r.json())
       .then(geo=>{
-        // 日本全体をぴったり収める手動プロジェクション
-        const proj=d3.geoMercator()
-          .center([136.5, 35.5])
-          .scale(1550)
-          .translate([W/2, H/2]);
+        const W=1000, H=1100;
+        const proj=d3.geoMercator().fitSize([W,H],geo);
         const pg=d3.geoPath().projection(proj);
 
-        // 実際のパス境界を計算してviewBoxを最適化
-        let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
-        const res=geo.features.map(f=>{
-          const d=pg(f);
-          if(!d) return null;
-          const b=pg.bounds(f);
-          x0=Math.min(x0,b[0][0]); y0=Math.min(y0,b[0][1]);
-          x1=Math.max(x1,b[1][0]); y1=Math.max(y1,b[1][1]);
-          const name=f.properties?.name_local||f.properties?.nam_ja||f.properties?.nam||
-                     f.properties?.prefName||f.properties?.N03_001||f.properties?.name||'';
-          return { d, name };
-        }).filter(Boolean);
+        // 実際のパス境界を計算
+        let x0=W,y0=H,x1=0,y1=0;
+        geo.features.forEach(f=>{
+          try {
+            const b=pg.bounds(f);
+            if(isFinite(b[0][0])){
+              x0=Math.min(x0,b[0][0]); y0=Math.min(y0,b[0][1]);
+              x1=Math.max(x1,b[1][0]); y1=Math.max(y1,b[1][1]);
+            }
+          } catch(e){}
+        });
 
-        if(res.length===0){setUseFallback(true);return;}
         const pad=8;
-        setMapData({ features:res, vb:`${x0-pad} ${y0-pad} ${x1-x0+pad*2} ${y1-y0+pad*2}` });
+        const vb=`${x0-pad} ${y0-pad} ${x1-x0+pad*2} ${y1-y0+pad*2}`;
+
+        const features=geo.features.map(f=>({
+          d:pg(f),
+          name:f.properties?.name_local||f.properties?.nam_ja||f.properties?.nam||
+               f.properties?.prefName||f.properties?.N03_001||f.properties?.name||'',
+        })).filter(f=>f.d);
+
+        if(features.length===0){setUseFallback(true);return;}
+        setMapData({features, vb});
       })
       .catch(()=>setUseFallback(true));
   },[]);
@@ -235,7 +238,7 @@ function JapanMap({ observedPrefs }) {
           {mapData.features.map((f,i)=>(
             <path key={i} d={f.d}
               fill={match(f.name)?"#4A6B3C":"#D8CEB0"}
-              stroke="#F5F0E8" strokeWidth="0.8"/>
+              stroke="#F5F0E8" strokeWidth="1.2"/>
           ))}
         </svg>
       )}
