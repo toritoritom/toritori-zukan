@@ -137,68 +137,92 @@ async function uploadOriginal(file) {
 
 const ADMIN_PASSWORD = "Toritori3150";
 
+const PREF_GRID = [
+  {name:"北海道",col:11,row:1},{name:"青森県",col:10,row:2},{name:"岩手県",col:11,row:2},
+  {name:"秋田県",col:10,row:3},{name:"宮城県",col:11,row:3},{name:"山形県",col:10,row:4},
+  {name:"福島県",col:11,row:4},{name:"茨城県",col:12,row:4},{name:"群馬県",col:10,row:5},
+  {name:"栃木県",col:11,row:5},{name:"千葉県",col:12,row:5},{name:"新潟県",col:10,row:6},
+  {name:"埼玉県",col:11,row:6},{name:"東京都",col:12,row:6},{name:"神奈川県",col:12,row:7},
+  {name:"石川県",col:7,row:5},{name:"富山県",col:8,row:5},{name:"長野県",col:9,row:6},
+  {name:"福井県",col:7,row:6},{name:"岐阜県",col:8,row:6},{name:"山梨県",col:10,row:7},
+  {name:"静岡県",col:11,row:7},{name:"愛知県",col:9,row:7},{name:"三重県",col:8,row:7},
+  {name:"滋賀県",col:8,row:8},{name:"京都府",col:7,row:7},{name:"大阪府",col:7,row:8},
+  {name:"兵庫県",col:6,row:8},{name:"奈良県",col:8,row:9},{name:"和歌山県",col:7,row:9},
+  {name:"鳥取県",col:6,row:7},{name:"島根県",col:5,row:7},{name:"岡山県",col:6,row:9},
+  {name:"広島県",col:5,row:8},{name:"山口県",col:4,row:8},{name:"徳島県",col:7,row:10},
+  {name:"香川県",col:6,row:10},{name:"愛媛県",col:5,row:10},{name:"高知県",col:5,row:11},
+  {name:"福岡県",col:4,row:9},{name:"大分県",col:5,row:9},{name:"佐賀県",col:3,row:9},
+  {name:"長崎県",col:2,row:9},{name:"熊本県",col:4,row:10},{name:"宮崎県",col:6,row:11},
+  {name:"鹿児島県",col:4,row:11},{name:"沖縄県",col:2,row:12},
+];
+
+function JapanMapGrid({ observedPrefs }) {
+  const C=24,G=2,minCol=2,maxCol=12,minRow=1,maxRow=12;
+  const W=(maxCol-minCol+3)*C, H=(maxRow-minRow+3)*C;
+  const abbr=(n)=>({"北海道":"北海","神奈川県":"神奈","和歌山県":"和歌","鹿児島県":"鹿児","東京都":"東京","京都府":"京都","大阪府":"大阪"})[n]||n.slice(0,2);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{maxWidth:"320px",display:"block"}}>
+      {PREF_GRID.map(p=>{
+        const x=(p.col-minCol+1)*C+G, y=(p.row-minRow+1)*C+G, sz=C-G*2;
+        const obs=observedPrefs.has(p.name);
+        return (
+          <g key={p.name}>
+            <rect x={x} y={y} width={sz} height={sz} rx="2" fill={obs?"#4A6B3C":"#D8CEB0"}/>
+            <text x={x+sz/2} y={y+sz/2+3.5} textAnchor="middle" fontSize="7.5"
+              fontFamily="'Noto Serif JP',serif" fill={obs?"#E8DFC0":"#8A7A5A"}>{abbr(p.name)}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function JapanMap({ observedPrefs }) {
   const [features, setFeatures] = useState(null);
-  const W = 320, H = 360;
+  const [useFallback, setUseFallback] = useState(false);
+  const W=320, H=360;
 
-  useEffect(() => {
-    const d3 = window.d3;
-    if (!d3) return;
-    // 複数のGeoJSONソースを試みる
-    const sources = [
-      'https://raw.githubusercontent.com/smartnews-smri/japan-topography/main/data/municipality/geojson/prefectures.geojson',
-      'https://raw.githubusercontent.com/niiyz/JapanCityGeoJson/master/geojson/custom/pref.geojson',
-    ];
-    const tryFetch = (idx) => {
-      if (idx >= sources.length) { setFeatures([]); return; }
-      fetch(sources[idx])
-        .then(r => r.json())
-        .then(geojson => {
-          const projection = d3.geoMercator().fitSize([W, H], geojson);
-          const pathGen = d3.geoPath().projection(projection);
-          const result = geojson.features.map(f => {
-            const props = f.properties || {};
-            // 様々なプロパティ名に対応
-            const name = props.prefName || props.nam_ja || props.N03_001 ||
-                          props.name_ja || props.NAME_JA || props.name || props.nam || '';
-            return { d: pathGen(f), name };
-          }).filter(f => f.d);
-          if (result.length === 0) { tryFetch(idx + 1); return; }
-          setFeatures(result);
-        })
-        .catch(() => tryFetch(idx + 1));
-    };
-    tryFetch(0);
-  }, []);
+  useEffect(()=>{
+    const d3=window.d3;
+    if (!d3) { setUseFallback(true); return; }
+    fetch('https://cdn.jsdelivr.net/gh/dataofjapan/land@master/japan.geojson')
+      .then(r=>r.json())
+      .then(geo=>{
+        const proj=d3.geoMercator().fitSize([W,H],geo);
+        const pg=d3.geoPath().projection(proj);
+        const res=geo.features.map(f=>({
+          d:pg(f),
+          name:f.properties?.name_local||f.properties?.nam_ja||f.properties?.nam||
+               f.properties?.prefName||f.properties?.N03_001||f.properties?.name||'',
+        })).filter(f=>f.d);
+        if(res.length===0){setUseFallback(true);return;}
+        setFeatures(res);
+      })
+      .catch(()=>setUseFallback(true));
+  },[]);
 
-  const matchPref = (name) => {
-    if (!name) return false;
-    if (observedPrefs.has(name)) return true;
-    const base = name.replace(/[都道府県]$/, '');
-    for (const p of observedPrefs) {
-      if (p === name || p.replace(/[都道府県]$/, '') === base) return true;
-    }
+  const match=(name)=>{
+    if(!name) return false;
+    if(observedPrefs.has(name)) return true;
+    const b=name.replace(/[都道府県]$/,'');
+    for(const p of observedPrefs) if(p.replace(/[都道府県]$/,'')=== b) return true;
     return false;
   };
-
-  if (features === null) return (
-    <div style={{padding:"12px 18px 4px"}}>
-      <div style={{fontSize:"10px",color:"#8A7A5A",letterSpacing:".1em",marginBottom:"4px"}}>観察都道府県</div>
-      <div style={{fontSize:"11px",color:"#8A7A5A"}}>地図を読み込み中…</div>
-    </div>
-  );
-  if (features.length === 0) return null;
 
   return (
     <div style={{padding:"12px 18px 4px"}}>
       <div style={{fontSize:"10px",color:"#8A7A5A",letterSpacing:".1em",marginBottom:"4px"}}>観察都道府県</div>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{maxWidth:"320px",display:"block"}}>
-        {features.map((f, i) => (
-          <path key={i} d={f.d}
-            fill={matchPref(f.name) ? "#4A6B3C" : "#D8CEB0"}
-            stroke="#F5F0E8" strokeWidth="0.5"/>
-        ))}
-      </svg>
+      {useFallback ? (
+        <JapanMapGrid observedPrefs={observedPrefs}/>
+      ) : !features ? (
+        <div style={{fontSize:"11px",color:"#8A7A5A"}}>地図を読み込み中…</div>
+      ) : (
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{maxWidth:"320px",display:"block"}}>
+          {features.map((f,i)=>(
+            <path key={i} d={f.d} fill={match(f.name)?"#4A6B3C":"#D8CEB0"} stroke="#F5F0E8" strokeWidth="0.5"/>
+          ))}
+        </svg>
+      )}
     </div>
   );
 }
