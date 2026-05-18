@@ -8,6 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-geo@3/dist/d3-geo.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet" />
@@ -135,59 +136,53 @@ async function uploadOriginal(file) {
 
 const ADMIN_PASSWORD = "Toritori3150";
 
-const PREF_GRID = [
-  {name:"北海道",col:11,row:1},{name:"青森県",col:10,row:2},{name:"岩手県",col:11,row:2},
-  {name:"秋田県",col:10,row:3},{name:"宮城県",col:11,row:3},{name:"山形県",col:10,row:4},
-  {name:"福島県",col:11,row:4},{name:"茨城県",col:12,row:4},{name:"群馬県",col:10,row:5},
-  {name:"栃木県",col:11,row:5},{name:"千葉県",col:12,row:5},{name:"新潟県",col:10,row:6},
-  {name:"埼玉県",col:11,row:6},{name:"東京都",col:12,row:6},{name:"神奈川県",col:12,row:7},
-  {name:"石川県",col:7,row:5},{name:"富山県",col:8,row:5},{name:"長野県",col:9,row:6},
-  {name:"福井県",col:7,row:6},{name:"岐阜県",col:8,row:6},{name:"山梨県",col:10,row:7},
-  {name:"静岡県",col:11,row:7},{name:"愛知県",col:9,row:7},{name:"三重県",col:8,row:7},
-  {name:"滋賀県",col:8,row:8},{name:"京都府",col:7,row:7},{name:"大阪府",col:7,row:8},
-  {name:"兵庫県",col:6,row:8},{name:"奈良県",col:8,row:9},{name:"和歌山県",col:7,row:9},
-  {name:"鳥取県",col:6,row:7},{name:"島根県",col:5,row:7},{name:"岡山県",col:6,row:9},
-  {name:"広島県",col:5,row:8},{name:"山口県",col:4,row:8},{name:"徳島県",col:7,row:10},
-  {name:"香川県",col:6,row:10},{name:"愛媛県",col:5,row:10},{name:"高知県",col:5,row:11},
-  {name:"福岡県",col:4,row:9},{name:"大分県",col:5,row:9},{name:"佐賀県",col:3,row:9},
-  {name:"長崎県",col:2,row:9},{name:"熊本県",col:4,row:10},{name:"宮崎県",col:6,row:11},
-  {name:"鹿児島県",col:4,row:11},{name:"沖縄県",col:2,row:12},
-];
-
 function JapanMap({ observedPrefs }) {
-  const C = 24; // cell size
-  const G = 2;  // gap
-  const minCol = 2, maxCol = 12, minRow = 1, maxRow = 12;
-  const cols = maxCol - minCol + 3;
-  const rows = maxRow - minRow + 3;
-  const W = cols * C;
-  const H = rows * C;
-  const abbr = (name) => {
-    const map = {"北海道":"北海","神奈川県":"神奈","和歌山県":"和歌","鹿児島県":"鹿児","東京都":"東京","京都府":"京都","大阪府":"大阪"};
-    return map[name] || name.slice(0,2);
+  const [features, setFeatures] = useState(null);
+  const [pathStrings, setPathStrings] = useState(null);
+  const W = 340, H = 380;
+
+  useEffect(() => {
+    fetch('https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson')
+      .then(r => r.json())
+      .then(geojson => {
+        const projection = window.d3.geoMercator().fitSize([W, H], geojson);
+        const pathGen = window.d3.geoPath().projection(projection);
+        const result = geojson.features.map(f => ({
+          d: pathGen(f),
+          name: f.properties?.nam_ja || f.properties?.name_ja || f.properties?.name || '',
+        })).filter(f => f.d);
+        setFeatures(result);
+      })
+      .catch(() => setFeatures([]));
+  }, []);
+
+  const matchPref = (name) => {
+    if (observedPrefs.has(name)) return true;
+    const base = name.replace(/[都道府県]$/, '');
+    for (const p of observedPrefs) {
+      if (p.replace(/[都道府県]$/, '') === base) return true;
+    }
+    return false;
   };
+
   return (
     <div style={{padding:"12px 18px 4px"}}>
       <div style={{fontSize:"10px",color:"#8A7A5A",letterSpacing:".1em",marginBottom:"6px"}}>観察都道府県</div>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{maxWidth:"340px",display:"block"}}>
-        {PREF_GRID.map(p=>{
-          const x = (p.col - minCol + 1) * C + G;
-          const y = (p.row - minRow + 1) * C + G;
-          const sz = C - G * 2;
-          const observed = observedPrefs.has(p.name);
-          return (
-            <g key={p.name}>
-              <rect x={x} y={y} width={sz} height={sz} rx="2"
-                fill={observed ? "#4A6B3C" : "#E8E0CC"} />
-              <text x={x+sz/2} y={y+sz/2+3.5} textAnchor="middle"
-                fontSize="7.5" fontFamily="'Noto Serif JP',serif"
-                fill={observed ? "#E8DFC0" : "#8A7A5A"}>
-                {abbr(p.name)}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+      {!features ? (
+        <div style={{fontSize:"11px",color:"#8A7A5A",padding:"8px 0"}}>地図を読み込み中…</div>
+      ) : (
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{maxWidth:"340px",display:"block"}}>
+          {features.map((f, i) => (
+            <path
+              key={i}
+              d={f.d}
+              fill={matchPref(f.name) ? "#4A6B3C" : "#E8DFC0"}
+              stroke="#8A7A5A"
+              strokeWidth="0.6"
+            />
+          ))}
+        </svg>
+      )}
     </div>
   );
 }
