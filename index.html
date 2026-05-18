@@ -178,9 +178,9 @@ function JapanMapGrid({ observedPrefs }) {
 }
 
 function JapanMap({ observedPrefs }) {
-  const [features, setFeatures] = useState(null);
+  const [mapData, setMapData] = useState(null);
   const [useFallback, setUseFallback] = useState(false);
-  const W=320, H=360;
+  const W=400, H=480;
 
   useEffect(()=>{
     const d3=window.d3;
@@ -188,15 +188,29 @@ function JapanMap({ observedPrefs }) {
     fetch('https://cdn.jsdelivr.net/gh/dataofjapan/land@master/japan.geojson')
       .then(r=>r.json())
       .then(geo=>{
-        const proj=d3.geoMercator().fitSize([W,H],geo);
+        // 日本全体をぴったり収める手動プロジェクション
+        const proj=d3.geoMercator()
+          .center([136.5, 35.5])
+          .scale(1550)
+          .translate([W/2, H/2]);
         const pg=d3.geoPath().projection(proj);
-        const res=geo.features.map(f=>({
-          d:pg(f),
-          name:f.properties?.name_local||f.properties?.nam_ja||f.properties?.nam||
-               f.properties?.prefName||f.properties?.N03_001||f.properties?.name||'',
-        })).filter(f=>f.d);
+
+        // 実際のパス境界を計算してviewBoxを最適化
+        let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+        const res=geo.features.map(f=>{
+          const d=pg(f);
+          if(!d) return null;
+          const b=pg.bounds(f);
+          x0=Math.min(x0,b[0][0]); y0=Math.min(y0,b[0][1]);
+          x1=Math.max(x1,b[1][0]); y1=Math.max(y1,b[1][1]);
+          const name=f.properties?.name_local||f.properties?.nam_ja||f.properties?.nam||
+                     f.properties?.prefName||f.properties?.N03_001||f.properties?.name||'';
+          return { d, name };
+        }).filter(Boolean);
+
         if(res.length===0){setUseFallback(true);return;}
-        setFeatures(res);
+        const pad=8;
+        setMapData({ features:res, vb:`${x0-pad} ${y0-pad} ${x1-x0+pad*2} ${y1-y0+pad*2}` });
       })
       .catch(()=>setUseFallback(true));
   },[]);
@@ -210,16 +224,18 @@ function JapanMap({ observedPrefs }) {
   };
 
   return (
-    <div style={{padding:"12px 18px 4px"}}>
-      <div style={{fontSize:"10px",color:"#8A7A5A",letterSpacing:".1em",marginBottom:"4px"}}>観察都道府県</div>
+    <div style={{padding:"12px 0 4px"}}>
+      <div style={{fontSize:"10px",color:"#8A7A5A",letterSpacing:".1em",marginBottom:"4px",padding:"0 18px"}}>観察都道府県</div>
       {useFallback ? (
-        <JapanMapGrid observedPrefs={observedPrefs}/>
-      ) : !features ? (
-        <div style={{fontSize:"11px",color:"#8A7A5A"}}>地図を読み込み中…</div>
+        <div style={{padding:"0 18px"}}><JapanMapGrid observedPrefs={observedPrefs}/></div>
+      ) : !mapData ? (
+        <div style={{fontSize:"11px",color:"#8A7A5A",padding:"0 18px"}}>地図を読み込み中…</div>
       ) : (
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{maxWidth:"320px",display:"block"}}>
-          {features.map((f,i)=>(
-            <path key={i} d={f.d} fill={match(f.name)?"#4A6B3C":"#D8CEB0"} stroke="#F5F0E8" strokeWidth="0.5"/>
+        <svg viewBox={mapData.vb} width="100%" style={{display:"block"}}>
+          {mapData.features.map((f,i)=>(
+            <path key={i} d={f.d}
+              fill={match(f.name)?"#4A6B3C":"#D8CEB0"}
+              stroke="#F5F0E8" strokeWidth="0.8"/>
           ))}
         </svg>
       )}
