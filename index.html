@@ -7,6 +7,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3-geo@3/dist/d3-geo.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
@@ -138,53 +139,66 @@ const ADMIN_PASSWORD = "Toritori3150";
 
 function JapanMap({ observedPrefs }) {
   const [features, setFeatures] = useState(null);
-  const [error, setError] = useState(false);
-  const W = 340, H = 380;
+  const W = 320, H = 360;
 
   useEffect(() => {
-    fetch('https://cdn.jsdelivr.net/gh/dataofjapan/land@master/japan.geojson')
-      .then(r => r.json())
-      .then(geojson => {
-        try {
-          const d3geo = window.d3 || (typeof d3 !== 'undefined' ? d3 : null);
-          if (!d3geo) { setError(true); return; }
-          const projection = d3geo.geoMercator().fitSize([W, H], geojson);
-          const pathGen = d3geo.geoPath().projection(projection);
-          const result = geojson.features.map(f => ({
-            d: pathGen(f),
-            name: f.properties?.nam_ja || f.properties?.name_ja || f.properties?.NAME_JA || f.properties?.name || '',
-          })).filter(f => f.d);
+    const d3 = window.d3;
+    if (!d3) return;
+    // 複数のGeoJSONソースを試みる
+    const sources = [
+      'https://raw.githubusercontent.com/smartnews-smri/japan-topography/main/data/municipality/geojson/prefectures.geojson',
+      'https://raw.githubusercontent.com/niiyz/JapanCityGeoJson/master/geojson/custom/pref.geojson',
+    ];
+    const tryFetch = (idx) => {
+      if (idx >= sources.length) { setFeatures([]); return; }
+      fetch(sources[idx])
+        .then(r => r.json())
+        .then(geojson => {
+          const projection = d3.geoMercator().fitSize([W, H], geojson);
+          const pathGen = d3.geoPath().projection(projection);
+          const result = geojson.features.map(f => {
+            const props = f.properties || {};
+            // 様々なプロパティ名に対応
+            const name = props.prefName || props.nam_ja || props.N03_001 ||
+                          props.name_ja || props.NAME_JA || props.name || props.nam || '';
+            return { d: pathGen(f), name };
+          }).filter(f => f.d);
+          if (result.length === 0) { tryFetch(idx + 1); return; }
           setFeatures(result);
-        } catch(e) { setError(true); }
-      })
-      .catch(() => setError(true));
+        })
+        .catch(() => tryFetch(idx + 1));
+    };
+    tryFetch(0);
   }, []);
 
   const matchPref = (name) => {
+    if (!name) return false;
     if (observedPrefs.has(name)) return true;
     const base = name.replace(/[都道府県]$/, '');
     for (const p of observedPrefs) {
-      if (p.replace(/[都道府県]$/, '') === base) return true;
+      if (p === name || p.replace(/[都道府県]$/, '') === base) return true;
     }
     return false;
   };
 
-  if (error) return null;
+  if (features === null) return (
+    <div style={{padding:"12px 18px 4px"}}>
+      <div style={{fontSize:"10px",color:"#8A7A5A",letterSpacing:".1em",marginBottom:"4px"}}>観察都道府県</div>
+      <div style={{fontSize:"11px",color:"#8A7A5A"}}>地図を読み込み中…</div>
+    </div>
+  );
+  if (features.length === 0) return null;
 
   return (
     <div style={{padding:"12px 18px 4px"}}>
-      <div style={{fontSize:"10px",color:"#8A7A5A",letterSpacing:".1em",marginBottom:"6px"}}>観察都道府県</div>
-      {!features ? (
-        <div style={{fontSize:"11px",color:"#8A7A5A",padding:"4px 0"}}>地図を読み込み中…</div>
-      ) : (
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{maxWidth:"340px",display:"block"}}>
-          {features.map((f, i) => (
-            <path key={i} d={f.d}
-              fill={matchPref(f.name) ? "#4A6B3C" : "#E8DFC0"}
-              stroke="#8A7A5A" strokeWidth="0.6" />
-          ))}
-        </svg>
-      )}
+      <div style={{fontSize:"10px",color:"#8A7A5A",letterSpacing:".1em",marginBottom:"4px"}}>観察都道府県</div>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{maxWidth:"320px",display:"block"}}>
+        {features.map((f, i) => (
+          <path key={i} d={f.d}
+            fill={matchPref(f.name) ? "#4A6B3C" : "#D8CEB0"}
+            stroke="#F5F0E8" strokeWidth="0.5"/>
+        ))}
+      </svg>
     </div>
   );
 }
