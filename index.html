@@ -248,23 +248,32 @@ function JapanMap({ observedPrefs }) {
 
 function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpecies }) {
   const [filterAuthor, setFilterAuthor] = useState("");
-  const [sortMode, setSortMode] = useState("count"); // count | alpha | category | recent
+  const [sortMode, setSortMode] = useState("count"); // count | alpha | category | recent | env
   const authors = [...new Set(allObs.map(o=>o.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ja"));
   const filteredObs = filterAuthor ? allObs.filter(o=>o.author===filterAuthor) : allObs;
   const grouped = {};
   for (const obs of filteredObs) {
     const key = `${obs.category}__${obs.species}`;
-    if (!grouped[key]) grouped[key] = { catId:obs.category, species:obs.species, count:0, hasPhoto:false, latestId:obs.id, latestCreatedAt:obs.created_at };
+    if (!grouped[key]) grouped[key] = { catId:obs.category, species:obs.species, count:0, hasPhoto:false, latestId:obs.id, latestCreatedAt:obs.created_at, envs:{} };
     grouped[key].count++;
     if (obs.photos?.length>0) grouped[key].hasPhoto=true;
     if (obs.created_at > grouped[key].latestCreatedAt) {
       grouped[key].latestCreatedAt = obs.created_at;
       grouped[key].latestId = obs.id;
     }
+    // 観察環境を集計
+    const envPart = (obs.location||"").split("　")[1] || "";
+    if (envPart) grouped[key].envs[envPart] = (grouped[key].envs[envPart]||0) + 1;
   }
-  // NEW判定：追加順で上位5件の種
+  // NEW判定
   const recentEntries = Object.values(grouped).sort((a,b)=>b.latestCreatedAt?.localeCompare(a.latestCreatedAt||"")||0).slice(0,5);
   const newSpeciesKeys = new Set(recentEntries.map(e=>`${e.catId}__${e.species}`));
+  // 主な観察環境（最多の環境）
+  const mainEnv = (e) => {
+    const envs = e.envs;
+    if (!envs || Object.keys(envs).length===0) return "その他";
+    return Object.entries(envs).sort((a,b)=>b[1]-a[1])[0][0];
+  };
   const entries = Object.values(grouped).sort((a,b)=>{
     if (sortMode==="alpha")    return a.species.localeCompare(b.species,"ja");
     if (sortMode==="category") {
@@ -272,6 +281,7 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
       return ci(a.catId)!==ci(b.catId) ? ci(a.catId)-ci(b.catId) : a.species.localeCompare(b.species,"ja");
     }
     if (sortMode==="recent")   return (b.latestCreatedAt||"").localeCompare(a.latestCreatedAt||"");
+    if (sortMode==="env")      return mainEnv(a).localeCompare(mainEnv(b),"ja") || a.species.localeCompare(b.species,"ja");
     return b.count - a.count;
   });
   const catLabel = (catId) => CATEGORIES.find(c=>c.id===catId)?.label||catId;
@@ -312,13 +322,86 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
         </div>
       )}
       {/* 並べ替え */}
-      <div style={{padding:"8px 18px 4px",display:"flex",gap:"6px",alignItems:"center"}}>
+      <div style={{padding:"8px 18px 4px",display:"flex",gap:"6px",alignItems:"center",flexWrap:"wrap"}}>
         <span style={{fontSize:"10px",color:"#8A7A5A",marginRight:"2px",letterSpacing:".05em"}}>並べ替え：</span>
         <button style={sortBtnStyle(sortMode==="count")}    onClick={()=>setSortMode("count")}>記録数順</button>
         <button style={sortBtnStyle(sortMode==="alpha")}    onClick={()=>setSortMode("alpha")}>あいうえお</button>
         <button style={sortBtnStyle(sortMode==="category")} onClick={()=>setSortMode("category")}>目別</button>
+        <button style={sortBtnStyle(sortMode==="env")}      onClick={()=>setSortMode("env")}>観察環境別</button>
         <button style={sortBtnStyle(sortMode==="recent")}   onClick={()=>setSortMode("recent")}>追加順</button>
       </div>
+      {loading ? <div className="loading">読み込み中…</div>
+      : entries.length===0
+        ? <div className="empty">記録がありません</div>
+        : (
+          <div className="sp-list">
+            {sortMode==="category" ? (
+              CATEGORIES.map(cat=>{
+                const catEntries = entries.filter(e=>e.catId===cat.id);
+                if (catEntries.length===0) return null;
+                return (
+                  <React.Fragment key={cat.id}>
+                    <div style={{padding:"10px 12px 4px",fontSize:"11px",color:"#8A7A5A",letterSpacing:".1em",borderBottom:"1px solid #D8CEB0",marginTop:"6px"}}>
+                      {cat.label}（{catEntries.length}種）
+                    </div>
+                    {catEntries.map((e,i)=>{
+                      const isNew = newSpeciesKeys.has(`${e.catId}__${e.species}`);
+                      return (
+                        <div key={i} className="sp-item" onClick={()=>onSelectSpecies(e.catId, e.species)}>
+                          <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}{isNew&&<span style={{marginLeft:"6px",fontSize:"10px",background:"#C04040",color:"#fff",padding:"1px 6px",borderRadius:"8px",letterSpacing:".05em"}}>NEW</span>}</span>
+                          <span className="sp-cnt">{e.count}件</span>
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                );
+              })
+            ) : sortMode==="env" ? (
+              // 観察環境別グループ表示
+              (() => {
+                const envGroups = {};
+                entries.forEach(e => {
+                  const env = mainEnv(e);
+                  if (!envGroups[env]) envGroups[env] = [];
+                  envGroups[env].push(e);
+                });
+                return Object.entries(envGroups).sort(([a],[b])=>a.localeCompare(b,"ja")).map(([env, grpEntries])=>(
+                  <React.Fragment key={env}>
+                    <div style={{padding:"10px 12px 4px",fontSize:"11px",color:"#8A7A5A",letterSpacing:".1em",borderBottom:"1px solid #D8CEB0",marginTop:"6px"}}>
+                      {env}（{grpEntries.length}種）
+                    </div>
+                    {grpEntries.map((e,i)=>{
+                      const isNew = newSpeciesKeys.has(`${e.catId}__${e.species}`);
+                      return (
+                        <div key={i} className="sp-item" onClick={()=>onSelectSpecies(e.catId, e.species)}>
+                          <div>
+                            <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}{isNew&&<span style={{marginLeft:"6px",fontSize:"10px",background:"#C04040",color:"#fff",padding:"1px 6px",borderRadius:"8px",letterSpacing:".05em"}}>NEW</span>}</span>
+                            <div style={{fontSize:"10px",color:"#8A7A5A",marginTop:"2px"}}>{catLabel(e.catId)}</div>
+                          </div>
+                          <span className="sp-cnt">{e.count}件</span>
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ));
+              })()
+            ) : (
+              entries.map((e,i)=>{
+                const isNew = newSpeciesKeys.has(`${e.catId}__${e.species}`);
+                return (
+                  <div key={i} className="sp-item" onClick={()=>onSelectSpecies(e.catId, e.species)}>
+                    <div>
+                      <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}{isNew&&<span style={{marginLeft:"6px",fontSize:"10px",background:"#C04040",color:"#fff",padding:"1px 6px",borderRadius:"8px",letterSpacing:".05em"}}>NEW</span>}</span>
+                      <div style={{fontSize:"10px",color:"#8A7A5A",marginTop:"2px"}}>{catLabel(e.catId)}</div>
+                    </div>
+                    <span className="sp-cnt">{e.count}件</span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )
+      }
       {loading ? <div className="loading">読み込み中…</div>
       : entries.length===0
         ? <div className="empty">記録がありません</div>
