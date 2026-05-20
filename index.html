@@ -248,7 +248,7 @@ function JapanMap({ observedPrefs }) {
 
 function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpecies }) {
   const [filterAuthor, setFilterAuthor] = useState("");
-  const [sortMode, setSortMode] = useState("count"); // count | alpha | category | recent | env
+  const [sortMode, setSortMode] = useState("count"); // count | alpha | category | recent | env | pref
   const authors = [...new Set(allObs.map(o=>o.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ja"));
   const filteredObs = filterAuthor ? allObs.filter(o=>o.author===filterAuthor) : allObs;
   const grouped = {};
@@ -261,9 +261,12 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
       grouped[key].latestCreatedAt = obs.created_at;
       grouped[key].latestId = obs.id;
     }
-    // 観察環境を集計
+    // 観察環境・都道府県を集計
     const envPart = (obs.location||"").split("　")[1] || "";
     if (envPart) grouped[key].envs[envPart] = (grouped[key].envs[envPart]||0) + 1;
+    const prefPart = (obs.location||"").split("　")[0] || "";
+    if (prefPart) grouped[key].prefs = grouped[key].prefs || {};
+    if (prefPart) grouped[key].prefs[prefPart] = (grouped[key].prefs?.[prefPart]||0) + 1;
   }
   // NEW判定
   const recentEntries = Object.values(grouped).sort((a,b)=>b.latestCreatedAt?.localeCompare(a.latestCreatedAt||"")||0).slice(0,5);
@@ -274,6 +277,11 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
     if (!envs || Object.keys(envs).length===0) return "その他";
     return Object.entries(envs).sort((a,b)=>b[1]-a[1])[0][0];
   };
+  const mainPref = (e) => {
+    const prefs = e.prefs;
+    if (!prefs || Object.keys(prefs).length===0) return "その他";
+    return Object.entries(prefs).sort((a,b)=>b[1]-a[1])[0][0];
+  };
   const entries = Object.values(grouped).sort((a,b)=>{
     if (sortMode==="alpha")    return a.species.localeCompare(b.species,"ja");
     if (sortMode==="category") {
@@ -282,6 +290,7 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
     }
     if (sortMode==="recent")   return (b.latestCreatedAt||"").localeCompare(a.latestCreatedAt||"");
     if (sortMode==="env")      return mainEnv(a).localeCompare(mainEnv(b),"ja") || a.species.localeCompare(b.species,"ja");
+    if (sortMode==="pref")     return mainPref(a).localeCompare(mainPref(b),"ja") || a.species.localeCompare(b.species,"ja");
     return b.count - a.count;
   });
   const catLabel = (catId) => CATEGORIES.find(c=>c.id===catId)?.label||catId;
@@ -327,6 +336,7 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
         <button style={sortBtnStyle(sortMode==="count")}    onClick={()=>setSortMode("count")}>記録数順</button>
         <button style={sortBtnStyle(sortMode==="alpha")}    onClick={()=>setSortMode("alpha")}>あいうえお</button>
         <button style={sortBtnStyle(sortMode==="category")} onClick={()=>setSortMode("category")}>目別</button>
+        <button style={sortBtnStyle(sortMode==="pref")}     onClick={()=>setSortMode("pref")}>都道府県別</button>
         <button style={sortBtnStyle(sortMode==="env")}      onClick={()=>setSortMode("env")}>観察環境別</button>
         <button style={sortBtnStyle(sortMode==="recent")}   onClick={()=>setSortMode("recent")}>追加順</button>
       </div>
@@ -356,7 +366,37 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
                   </React.Fragment>
                 );
               })
-            ) : sortMode==="env" ? (
+            ) : sortMode==="pref" ? (
+              // 都道府県別グループ表示
+              (() => {
+                const prefGroups = {};
+                entries.forEach(e => {
+                  const pref = mainPref(e);
+                  if (!prefGroups[pref]) prefGroups[pref] = [];
+                  prefGroups[pref].push(e);
+                });
+                // PREFECTURES順に並べる（登録順）
+                const sortedPrefs = [...PREFECTURES, "その他"].filter(p=>prefGroups[p]);
+                return sortedPrefs.map(pref=>(
+                  <React.Fragment key={pref}>
+                    <div style={{padding:"8px 14px",fontSize:"12px",color:"#F5F0E8",background:"#4A6B3C",letterSpacing:".08em",marginTop:"8px",borderRadius:"6px",fontWeight:"600"}}>
+                      {pref}　<span style={{fontWeight:"400",fontSize:"11px",opacity:.85}}>{prefGroups[pref].length}種</span>
+                    </div>
+                    {prefGroups[pref].map((e,i)=>{
+                      const isNew = newSpeciesKeys.has(`${e.catId}__${e.species}`);
+                      return (
+                        <div key={i} className="sp-item" onClick={()=>onSelectSpecies(e.catId, e.species)}>
+                          <div>
+                            <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}{isNew&&<span style={{marginLeft:"6px",fontSize:"10px",background:"#C04040",color:"#fff",padding:"1px 6px",borderRadius:"8px",letterSpacing:".05em"}}>NEW</span>}</span>
+                            <div style={{fontSize:"10px",color:"#8A7A5A",marginTop:"2px"}}>{catLabel(e.catId)}</div>
+                          </div>
+                          <span className="sp-cnt">{e.count}件</span>
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ));
+              })()
               // 観察環境別グループ表示
               (() => {
                 const envGroups = {};
