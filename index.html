@@ -397,6 +397,7 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
                   </React.Fragment>
                 ));
               })()
+            ) : sortMode==="env" ? (
               // 観察環境別グループ表示
               (() => {
                 const envGroups = {};
