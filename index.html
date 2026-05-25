@@ -910,7 +910,7 @@ function App(){
                 {CATEGORIES.map(c=>(
                   <div key={c.id} className="cat-card" onClick={()=>{ setActiveCategory(c.id); setView("category"); }}>
                     <div className="cat-name">{c.label}</div>
-                    <div className="cat-count">{SPECIES_LIST[c.id]?.length||0}種{countByCat(c.id)>0?` · ${countByCat(c.id)}件の記録`:""}</div>
+                    <div className="cat-count">{SPECIES_LIST[c.id]?.length||0}種{countByCat(c.id)>0?` · ${new Set(allObs.filter(o=>o.category===c.id).map(o=>o.species)).size}種の記録`:""}</div>
                     <div className="cat-bar" style={{background:c.color}}/>
                   </div>
                 ))}
