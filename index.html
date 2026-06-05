@@ -181,10 +181,11 @@ async function fetchWeather(date, prefecture) {
     const res = await fetch(url);
     const data = await res.json();
     if (!data.daily) return null;
-    // 時間ごとの風速の平均を計算
+    // 日中（6〜18時）の1時間平均風速を使用 → 10分間平均風速に近い値
     const hourlyWind = data.hourly?.wind_speed_10m || [];
-    const avgWind = hourlyWind.length > 0
-      ? hourlyWind.reduce((a,b)=>a+b,0) / hourlyWind.length
+    const daytimeWind = hourlyWind.slice(6, 19).filter(v => v != null);
+    const avgWind = daytimeWind.length > 0
+      ? daytimeWind.reduce((a,b)=>a+b,0) / daytimeWind.length
       : null;
     return {
       maxTemp: data.daily.temperature_2m_max?.[0],
@@ -268,7 +269,7 @@ function WeatherWidget({ weather }) {
         <WeatherSvgIcon code={weather.code} size={32} color="#A8D8B8"/>
         <div style={{flex:1}}>
           <div style={{fontSize:"13px",fontWeight:"600",letterSpacing:".05em"}}>{desc}</div>
-          <div style={{fontSize:"10px",opacity:.6,marginTop:"1px"}}>観察日の気象データ</div>
+          <div style={{fontSize:"10px",opacity:.6,marginTop:"1px"}}>観察日の気象データ（風速：日中平均）</div>
         </div>
         <div style={{textAlign:"right"}}>
           <div style={{display:"flex",alignItems:"center",gap:"5px",justifyContent:"flex-end",marginBottom:"5px"}}>
