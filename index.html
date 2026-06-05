@@ -645,9 +645,20 @@ function App(){
       .eq("category", activeCategory)
       .eq("species", activeSpecies)
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setSpeciesObs(data || []);
+      .then(async ({ data }) => {
+        const obs = data || [];
+        setSpeciesObs(obs);
         setLoadingSpecies(false);
+        // weather未取得の投稿があれば自動取得してDBに保存
+        const missing = obs.filter(o => !o.weather && o.date && o.location);
+        for (const o of missing) {
+          const pref = (o.location||"").split("　")[0];
+          if (!PREFECTURES.includes(pref)) continue;
+          const w = await fetchWeather(o.date, pref).catch(()=>null);
+          if (!w) continue;
+          await supabase.from("observations").update({ weather: w }).eq("id", o.id);
+          setSpeciesObs(prev => prev.map(x => x.id===o.id ? {...x, weather:w} : x));
+        }
       });
   }, [activeCategory, activeSpecies]);
 
