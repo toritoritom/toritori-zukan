@@ -287,7 +287,8 @@ function WeatherWidget({ weather }) {
   );
 }
 
-const ADMIN_PASSWORD = "Toritori3150";
+const IcCamera = (p) => <Ic {...p} d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z M12 17a4 4 0 100-8 4 4 0 000 8z"/>;
+const IcLens   = (p) => <Ic {...p} d="M12 2a10 10 0 100 20A10 10 0 0012 2z M12 8a4 4 0 100 8 4 4 0 000-8z"/>;
 
 const PREF_GRID = [
   {name:"北海道",col:11,row:1},{name:"青森県",col:10,row:2},{name:"岩手県",col:11,row:2},
@@ -1284,8 +1285,8 @@ function App(){
                   <div className="lb-exif" onClick={e=>e.stopPropagation()}>
                     {(exif.camera || exif.lens) && (
                       <div className="lb-exif-row">
-                        {exif.camera && <span>📷 {exif.camera}</span>}
-                        {exif.lens   && <span>🔭 {exif.lens}</span>}
+                        {exif.camera && <span style={{display:"flex",alignItems:"center",gap:"4px"}}><IcCamera size={12} stroke="#C8E0B8"/>{exif.camera}</span>}
+                        {exif.lens   && <span style={{display:"flex",alignItems:"center",gap:"4px"}}><IcLens size={12} stroke="#C8E0B8"/>{exif.lens}</span>}
                       </div>
                     )}
                     <div className="lb-exif-row" style={{marginTop:"4px"}}>
