@@ -159,82 +159,6 @@ async function uploadOriginal(file) {
 
 const ADMIN_PASSWORD = "Toritori3150";
 
-const PREF_COORDS = {
-  "北海道":[43.06,141.35],"青森県":[40.82,140.74],"岩手県":[39.70,141.15],"宮城県":[38.27,140.87],
-  "秋田県":[39.72,140.10],"山形県":[38.24,140.36],"福島県":[37.75,140.47],"茨城県":[36.34,140.45],
-  "栃木県":[36.57,139.88],"群馬県":[36.39,139.06],"埼玉県":[35.86,139.65],"千葉県":[35.61,140.12],
-  "東京都":[35.69,139.69],"神奈川県":[35.45,139.64],"新潟県":[37.90,139.02],"富山県":[36.70,137.21],
-  "石川県":[36.59,136.63],"福井県":[36.06,136.22],"山梨県":[35.66,138.57],"長野県":[36.65,138.18],
-  "岐阜県":[35.39,136.72],"静岡県":[34.98,138.38],"愛知県":[35.18,136.91],"三重県":[34.73,136.51],
-  "滋賀県":[35.00,135.87],"京都府":[35.02,135.76],"大阪府":[34.69,135.50],"兵庫県":[34.69,135.18],
-  "奈良県":[34.69,135.83],"和歌山県":[34.23,135.17],"鳥取県":[35.50,134.24],"島根県":[35.47,133.05],
-  "岡山県":[34.66,133.92],"広島県":[34.40,132.46],"山口県":[34.19,131.47],"徳島県":[34.07,134.56],
-  "香川県":[34.34,134.04],"愛媛県":[33.84,132.77],"高知県":[33.56,133.53],"福岡県":[33.61,130.42],
-  "佐賀県":[33.25,130.30],"長崎県":[32.74,129.87],"熊本県":[32.79,130.74],"大分県":[33.24,131.61],
-  "宮崎県":[31.91,131.42],"鹿児島県":[31.56,130.56],"沖縄県":[26.21,127.68],
-};
-
-const WMO_DESC = {
-  0:"快晴",1:"晴れ",2:"晴れ時々曇",3:"曇り",45:"霧",48:"霧氷",
-  51:"霧雨",53:"霧雨",55:"濃い霧雨",61:"小雨",63:"雨",65:"大雨",
-  71:"小雪",73:"雪",75:"大雪",77:"雪片",80:"にわか雨",81:"にわか雨",82:"激しいにわか雨",
-  85:"にわか雪",86:"激しいにわか雪",95:"雷雨",96:"雷雨＋ひょう",99:"激しい雷雨",
-};
-const WMO_ICON = {
-  0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"🌫️",
-  51:"🌦️",53:"🌦️",55:"🌧️",61:"🌧️",63:"🌧️",65:"🌧️",
-  71:"🌨️",73:"❄️",75:"❄️",77:"❄️",80:"🌦️",81:"🌧️",82:"⛈️",
-  85:"🌨️",86:"🌨️",95:"⛈️",96:"⛈️",99:"⛈️",
-};
-
-async function fetchWeather(date, prefecture) {
-  const coords = PREF_COORDS[prefecture];
-  if (!coords || !date) return null;
-  const [lat, lon] = coords;
-  try {
-    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${date}&end_date=${date}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,weather_code&timezone=Asia%2FTokyo`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!data.daily) return null;
-    return {
-      maxTemp: data.daily.temperature_2m_max?.[0],
-      minTemp: data.daily.temperature_2m_min?.[0],
-      precip:  data.daily.precipitation_sum?.[0],
-      wind:    data.daily.windspeed_10m_max?.[0],
-      code:    data.daily.weather_code?.[0],
-    };
-  } catch { return null; }
-}
-
-function WeatherWidget({ weather }) {
-  if (!weather) return null;
-  const icon = WMO_ICON[weather.code] ?? "🌤️";
-  const desc = WMO_DESC[weather.code] ?? "";
-  return (
-    <div style={{
-      background:"linear-gradient(135deg,#2C4A3A 0%,#3D6B50 100%)",
-      borderRadius:"10px", padding:"10px 14px", marginTop:"10px",
-      color:"#E8F5EE", fontFamily:"'Noto Serif JP',serif",
-    }}>
-      <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-        <span style={{fontSize:"26px",lineHeight:1}}>{icon}</span>
-        <div>
-          <div style={{fontSize:"13px",fontWeight:"600",letterSpacing:".05em"}}>{desc}</div>
-          <div style={{fontSize:"11px",opacity:.8,marginTop:"2px"}}>気象データ（日最高・最低）</div>
-        </div>
-        <div style={{marginLeft:"auto",textAlign:"right"}}>
-          <div style={{fontSize:"18px",fontWeight:"600",letterSpacing:".03em"}}>
-            {weather.maxTemp?.toFixed(1)}° <span style={{fontSize:"13px",opacity:.7}}>/ {weather.minTemp?.toFixed(1)}°</span>
-          </div>
-          <div style={{fontSize:"11px",opacity:.8,marginTop:"2px",display:"flex",gap:"10px",justifyContent:"flex-end"}}>
-            {weather.wind != null && <span>💨 {weather.wind?.toFixed(1)}m/s</span>}
-            {weather.precip != null && <span>🌧️ {weather.precip?.toFixed(1)}mm</span>}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
   {name:"北海道",col:11,row:1},{name:"青森県",col:10,row:2},{name:"岩手県",col:11,row:2},
@@ -681,8 +605,6 @@ function App(){
     if (!form.prefecture || !form.environment || !form.date) { alert("都道府県・観察環境・観察日は必須です"); return; }
     setSaving(true);
     const location = [form.prefecture, form.environment].join("　");
-    // 気象データを取得（バックグラウンドで、失敗しても続行）
-    const weatherData = await fetchWeather(form.date, form.prefecture).catch(()=>null);
     if (editingObs) {
       // 編集モード
       const photoData = photos.map(p => {
@@ -696,12 +618,12 @@ function App(){
         memo:     form.memo,
         author:   form.author,
         photos:   photoData,
-        weather:  weatherData,
       }).eq("id", editingObs.id);
       setSaving(false);
       if (error) { alert("更新に失敗しました："+error.message); return; }
       setAllObs(prev => prev.map(o => o.id===editingObs.id
-        ? {...o, season:form.season, location:location, date:form.date, memo:form.memo, author:form.author, photos:photoData, weather:weatherData}
+        ? {...o, season:form.season, location:location, date:form.date, memo:form.memo, author:form.author, photos:photoData,
+}
         : o));
     } else {
       // 新規追加：圧縮版をDBに保存
@@ -719,7 +641,6 @@ function App(){
         memo:     form.memo,
         author:   form.author,
         photos:   photoData,
-        weather:  weatherData,
       }]).select().single();
       setSaving(false);
       if (error) { alert("保存に失敗しました："+error.message); return; }
@@ -1099,7 +1020,6 @@ function App(){
                       </div>
                     )}
                     {obs.memo && <div className="obs-memo" style={{whiteSpace:"pre-wrap"}}>{obs.memo}</div>}
-                    <WeatherWidget weather={obs.weather} />
                     <div className="obs-footer">
                       <button className={`stamp-btn${myStamp?" stamped":""}`} onClick={()=>handleStamp(obs)}>
                         👀 {myStamp ? "見た！" : "見た"}{(obs.stamps||0)>0 && <span style={{fontWeight:"600"}}>{obs.stamps}</span>}
