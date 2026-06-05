@@ -196,30 +196,89 @@ async function fetchWeather(date, prefecture) {
   } catch { return null; }
 }
 
+// SVGアイコン（スタイリッシュ版）
+const Ic = ({ d, size=13, stroke="#8A7A5A", fill="none", sw=1.8 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke}
+    strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"
+    style={{display:"inline-block",verticalAlign:"middle",flexShrink:0}}>
+    <path d={d}/>
+  </svg>
+);
+const IcPin      = (p) => <Ic {...p} d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill={p.stroke||"#8A7A5A"} stroke="none"/>;
+const IcCal      = (p) => <Ic {...p} d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"/>;
+const IcPen      = (p) => <Ic {...p} d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>;
+const IcWind     = (p) => <Ic {...p} d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"/>;
+const IcDrop     = (p) => <Ic {...p} d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>;
+const IcTherm    = (p) => <Ic {...p} d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"/>;
+
+// 天気コード → SVGアイコン
+function WeatherSvgIcon({ code, size=28, color="#E8F5EE" }) {
+  const c = code ?? -1;
+  const props = { size, stroke:color, sw:1.6 };
+  if (c===0) return ( // 快晴
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round">
+      <circle cx="12" cy="12" r="5"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+      <line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+  );
+  if (c<=2) return ( // 晴れ〜一部曇り
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round">
+      <circle cx="10" cy="13" r="4" fill={color} stroke="none" opacity=".3"/>
+      <path d="M9 17H6a4 4 0 010-8 5 5 0 019.9-1A3 3 0 0118 14h-2"/>
+      <circle cx="17" cy="8" r="3" fill="none"/>
+    </svg>
+  );
+  if (c<=3) return ( // 曇り
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round">
+      <path d="M18 10h-1.26A8 8 0 109 20H18a5 5 0 100-10z"/>
+    </svg>
+  );
+  if (c<=55) return ( // 霧・霧雨
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round">
+      <path d="M18 10h-1.26A8 8 0 109 20H18a5 5 0 100-10z"/>
+      <line x1="8" y1="19" x2="8" y2="21"/><line x1="12" y1="19" x2="12" y2="21"/><line x1="16" y1="19" x2="16" y2="21"/>
+    </svg>
+  );
+  if (c<=75) return ( // 雨・雪
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round">
+      <path d="M18 10h-1.26A8 8 0 109 20H18a5 5 0 100-10z"/>
+      <line x1="8" y1="19" x2="6" y2="23"/><line x1="12" y1="19" x2="10" y2="23"/><line x1="16" y1="19" x2="14" y2="23"/>
+    </svg>
+  );
+  return ( // 雷・その他
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round">
+      <path d="M18 10h-1.26A8 8 0 109 20H18a5 5 0 100-10z"/>
+      <polyline points="13 11 9 17 15 17 11 23"/>
+    </svg>
+  );
+}
+
 function WeatherWidget({ weather }) {
   if (!weather) return null;
-  const icon = WMO_ICON[weather.code] ?? "🌤️";
   const desc = WMO_DESC[weather.code] ?? "";
   return (
     <div style={{
       background:"linear-gradient(135deg,#2C4A3A 0%,#3D6B50 100%)",
-      borderRadius:"10px", padding:"10px 14px", marginTop:"10px",
+      borderRadius:"10px", padding:"12px 16px", marginTop:"10px",
       color:"#E8F5EE", fontFamily:"'Noto Serif JP',serif",
     }}>
-      <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-        <span style={{fontSize:"28px",lineHeight:1}}>{icon}</span>
-        <div>
+      <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+        <WeatherSvgIcon code={weather.code} size={32} color="#A8D8B8"/>
+        <div style={{flex:1}}>
           <div style={{fontSize:"13px",fontWeight:"600",letterSpacing:".05em"}}>{desc}</div>
-          <div style={{fontSize:"10px",opacity:.7,marginTop:"2px"}}>観察日の気象データ</div>
+          <div style={{fontSize:"10px",opacity:.6,marginTop:"1px"}}>観察日の気象データ</div>
         </div>
-        <div style={{marginLeft:"auto",textAlign:"right"}}>
-          <div style={{fontSize:"20px",fontWeight:"600",letterSpacing:".02em"}}>
-            {weather.maxTemp?.toFixed(1)}°
-            <span style={{fontSize:"14px",opacity:.7}}> / {weather.minTemp?.toFixed(1)}°</span>
+        <div style={{textAlign:"right"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"5px",justifyContent:"flex-end",marginBottom:"5px"}}>
+            <IcTherm size={13} stroke="#A8D8B8"/>
+            <span style={{fontSize:"18px",fontWeight:"600"}}>{weather.maxTemp?.toFixed(1)}°</span>
+            <span style={{fontSize:"12px",opacity:.6}}>/ {weather.minTemp?.toFixed(1)}°</span>
           </div>
-          <div style={{fontSize:"11px",opacity:.8,marginTop:"3px",display:"flex",gap:"10px",justifyContent:"flex-end"}}>
-            {weather.wind  != null && <span>💨 {weather.wind.toFixed(1)}m/s（平均）</span>}
-            {weather.precip!= null && <span>🌧️ {weather.precip.toFixed(1)}mm</span>}
+          <div style={{fontSize:"11px",opacity:.8,display:"flex",gap:"10px",justifyContent:"flex-end"}}>
+            {weather.wind   != null && <span style={{display:"flex",alignItems:"center",gap:"3px"}}><IcWind size={11} stroke="#A8D8B8"/>{weather.wind.toFixed(1)}m/s</span>}
+            {weather.precip != null && <span style={{display:"flex",alignItems:"center",gap:"3px"}}><IcDrop size={11} stroke="#A8D8B8"/>{weather.precip.toFixed(1)}mm</span>}
           </div>
         </div>
       </div>
@@ -1090,7 +1149,11 @@ function App(){
                   <div key={obs.id} className={`obs-card${obs.pinned?" pinned":""}`}>
                     {obs.pinned && <span className="pin-badge">📌 固定</span>}
                     <span className="obs-season">{obs.season}</span>
-                    <div className="obs-meta">📍 {obs.location}　📅 {obs.date}{obs.author ? `　✏️ ${obs.author}` : ""}</div>
+                    <div className="obs-meta" style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+                      <span style={{display:"flex",alignItems:"center",gap:"3px"}}><IcPin size={12} stroke="#8A7A5A"/>{obs.location}</span>
+                      <span style={{display:"flex",alignItems:"center",gap:"3px"}}><IcCal size={12} stroke="#8A7A5A" fill="none"/>{obs.date}</span>
+                      {obs.author && <span style={{display:"flex",alignItems:"center",gap:"3px"}}><IcPen size={11} stroke="#8A7A5A"/>{obs.author}</span>}
+                    </div>
                     {obs.photos?.length>0 && (
                       <div className="obs-photos">
                         {obs.photos.map((p,pi)=>{
@@ -1234,7 +1297,8 @@ function App(){
                   </div>
                 )}
                 <div className="lb-meta" onClick={e=>e.stopPropagation()}>
-                  📍 {lightbox.obs.location}　📅 {lightbox.obs.date}
+                  <span style={{display:"inline-flex",alignItems:"center",gap:"3px",marginRight:"10px"}}><IcPin size={11} stroke="#C8BC9E"/>{lightbox.obs.location}</span>
+                  <span style={{display:"inline-flex",alignItems:"center",gap:"3px"}}><IcCal size={11} stroke="#C8BC9E" fill="none"/>{lightbox.obs.date}</span>
                   {lightbox.obs.memo && <><br/>{lightbox.obs.memo}</>}
                 </div>
               </>
