@@ -157,6 +157,71 @@ async function uploadOriginal(file) {
   return data.publicUrl;
 }
 
+// 気象コード変換テーブル
+const WMO_DESC = {
+  0:"快晴",1:"晴れ",2:"一部曇り",3:"曇り",
+  45:"霧",48:"霧氷",51:"霧雨",53:"霧雨",55:"濃い霧雨",
+  61:"小雨",63:"雨",65:"大雨",71:"小雪",73:"雪",75:"大雪",
+  80:"にわか雨",81:"にわか雨",82:"激しいにわか雨",
+  85:"にわか雪",86:"激しいにわか雪",95:"雷雨",96:"雷雨＋ひょう",99:"激しい雷雨",
+};
+const WMO_ICON = {
+  0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"🌫️",
+  51:"🌦️",53:"🌦️",55:"🌧️",61:"🌧️",63:"🌧️",65:"🌧️",
+  71:"🌨️",73:"❄️",75:"❄️",80:"🌦️",81:"🌧️",82:"⛈️",
+  85:"🌨️",86:"🌨️",95:"⛈️",96:"⛈️",99:"⛈️",
+};
+
+async function fetchWeather(date, prefecture) {
+  const coords = PREF_COORDS[prefecture];
+  if (!coords || !date) return null;
+  try {
+    const [lat, lon] = coords;
+    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${date}&end_date=${date}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,weather_code&timezone=Asia%2FTokyo`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.daily) return null;
+    return {
+      maxTemp: data.daily.temperature_2m_max?.[0],
+      minTemp: data.daily.temperature_2m_min?.[0],
+      precip:  data.daily.precipitation_sum?.[0],
+      wind:    data.daily.windspeed_10m_max?.[0],
+      code:    data.daily.weather_code?.[0],
+    };
+  } catch { return null; }
+}
+
+function WeatherWidget({ weather }) {
+  if (!weather) return null;
+  const icon = WMO_ICON[weather.code] ?? "🌤️";
+  const desc = WMO_DESC[weather.code] ?? "";
+  return (
+    <div style={{
+      background:"linear-gradient(135deg,#2C4A3A 0%,#3D6B50 100%)",
+      borderRadius:"10px", padding:"10px 14px", marginTop:"10px",
+      color:"#E8F5EE", fontFamily:"'Noto Serif JP',serif",
+    }}>
+      <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+        <span style={{fontSize:"28px",lineHeight:1}}>{icon}</span>
+        <div>
+          <div style={{fontSize:"13px",fontWeight:"600",letterSpacing:".05em"}}>{desc}</div>
+          <div style={{fontSize:"10px",opacity:.7,marginTop:"2px"}}>観察日の気象データ</div>
+        </div>
+        <div style={{marginLeft:"auto",textAlign:"right"}}>
+          <div style={{fontSize:"20px",fontWeight:"600",letterSpacing:".02em"}}>
+            {weather.maxTemp?.toFixed(1)}°
+            <span style={{fontSize:"14px",opacity:.7}}> / {weather.minTemp?.toFixed(1)}°</span>
+          </div>
+          <div style={{fontSize:"11px",opacity:.8,marginTop:"3px",display:"flex",gap:"10px",justifyContent:"flex-end"}}>
+            {weather.wind  != null && <span>💨 {weather.wind.toFixed(1)}m/s</span>}
+            {weather.precip!= null && <span>🌧️ {weather.precip.toFixed(1)}mm</span>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const ADMIN_PASSWORD = "Toritori3150";
 
 const PREF_GRID = [
@@ -604,6 +669,8 @@ function App(){
     if (!form.prefecture || !form.environment || !form.date) { alert("都道府県・観察環境・観察日は必須です"); return; }
     setSaving(true);
     const location = [form.prefecture, form.environment].join("　");
+    // 気象データ取得（失敗しても投稿は続行）
+    const weatherData = await fetchWeather(form.date, form.prefecture).catch(()=>null);
     if (editingObs) {
       // 編集モード
       const photoData = photos.map(p => {
@@ -617,12 +684,12 @@ function App(){
         memo:     form.memo,
         author:   form.author,
         photos:   photoData,
+        weather:  weatherData,
       }).eq("id", editingObs.id);
       setSaving(false);
       if (error) { alert("更新に失敗しました："+error.message); return; }
       setAllObs(prev => prev.map(o => o.id===editingObs.id
-        ? {...o, season:form.season, location:location, date:form.date, memo:form.memo, author:form.author, photos:photoData,
-}
+        ? {...o, season:form.season, location:location, date:form.date, memo:form.memo, author:form.author, photos:photoData, weather:weatherData}
         : o));
     } else {
       // 新規追加：圧縮版をDBに保存
@@ -640,6 +707,7 @@ function App(){
         memo:     form.memo,
         author:   form.author,
         photos:   photoData,
+        weather:  weatherData,
       }]).select().single();
       setSaving(false);
       if (error) { alert("保存に失敗しました："+error.message); return; }
@@ -1019,6 +1087,7 @@ function App(){
                       </div>
                     )}
                     {obs.memo && <div className="obs-memo" style={{whiteSpace:"pre-wrap"}}>{obs.memo}</div>}
+                    <WeatherWidget weather={obs.weather} />
                     <div className="obs-footer">
                       <button className={`stamp-btn${myStamp?" stamped":""}`} onClick={()=>handleStamp(obs)}>
                         👀 {myStamp ? "見た！" : "見た"}{(obs.stamps||0)>0 && <span style={{fontWeight:"600"}}>{obs.stamps}</span>}
