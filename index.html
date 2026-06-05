@@ -701,10 +701,26 @@ function App(){
   // 種を選んだとき写真込みで取得
   const [speciesObs, setSpeciesObs] = useState([]);
   const [loadingSpecies, setLoadingSpecies] = useState(false);
+  const [speciesInfo, setSpeciesInfo] = useState(null);
 
   useEffect(()=>{
-    if (!activeCategory || !activeSpecies) { setSpeciesObs([]); return; }
+    if (!activeCategory || !activeSpecies) { setSpeciesObs([]); setSpeciesInfo(null); return; }
     setLoadingSpecies(true);
+    setSpeciesInfo(null);
+    // iNaturalistから学名・保全情報を取得
+    fetch(`https://api.inaturalist.org/v1/taxa/autocomplete?q=${encodeURIComponent(activeSpecies)}&locale=ja`)
+      .then(r=>r.json())
+      .then(data=>{
+        const t = data.results?.[0];
+        if (!t) return;
+        const cs = t.conservation_status;
+        setSpeciesInfo({
+          scientific: t.name,
+          status: cs?.status?.toUpperCase() || null,
+          statusName: cs?.status_name || null,
+        });
+      })
+      .catch(()=>{});
     supabase
       .from("observations")
       .select("*")
@@ -1128,7 +1144,32 @@ function App(){
             <div className="sp-detail-hdr">
               <button className="back-btn" onClick={()=>{ setView("category"); setActiveSpecies(null); }}>← {cat?.label}に戻る</button>
               <div className="sp-detail-name">{activeSpecies}</div>
-              <div className="sp-detail-cat">{cat?.label}</div>
+              {speciesInfo?.scientific && (
+                <div style={{fontSize:"13px",color:"#6A7A5A",fontStyle:"italic",letterSpacing:".03em",margin:"2px 0 4px"}}>
+                  {speciesInfo.scientific}
+                </div>
+              )}
+              <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
+                <div className="sp-detail-cat">{cat?.label}</div>
+                {speciesInfo?.status && (
+                  <span style={{
+                    fontSize:"10px",fontWeight:"600",letterSpacing:".08em",
+                    padding:"2px 8px",borderRadius:"4px",
+                    ...({
+                      'LC': {background:"#E8F0E4",color:"#3A6B2A"},
+                      'NT': {background:"#F0F0E0",color:"#6A7A2A"},
+                      'VU': {background:"#F5EAD0",color:"#8A6020"},
+                      'EN': {background:"#F5E0D0",color:"#C06020"},
+                      'CR': {background:"#F5D8D8",color:"#C04040"},
+                      'EW': {background:"#D8D8D8",color:"#2A2A2A"},
+                      'EX': {background:"#D8D8D8",color:"#2A2A2A"},
+                      'DD': {background:"#E8E8E8",color:"#6A6A6A"},
+                    }[speciesInfo.status] || {background:"#E8E8E8",color:"#6A6A6A"})
+                  }}>
+                    IUCN {speciesInfo.status}
+                  </span>
+                )}
+              </div>
             </div>
             {(() => {
               const speciesObs = obsFor(activeCategory, activeSpecies);
