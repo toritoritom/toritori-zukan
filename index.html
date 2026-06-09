@@ -410,7 +410,7 @@ function JapanMap({ observedPrefs }) {
 
 function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpecies }) {
   const [filterAuthor, setFilterAuthor] = useState("");
-  const [sortMode, setSortMode] = useState("count"); // count | alpha | category | recent | env | pref
+  const [sortMode, setSortMode] = useState("count"); // count | alpha | category | recent | env | pref | season
   const authors = [...new Set(allObs.map(o=>o.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ja"));
   const filteredObs = filterAuthor ? allObs.filter(o=>o.author===filterAuthor) : allObs;
   const grouped = {};
@@ -429,6 +429,9 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
     const prefPart = (obs.location||"").split("　")[0] || "";
     if (prefPart) grouped[key].prefs = grouped[key].prefs || {};
     if (prefPart) grouped[key].prefs[prefPart] = (grouped[key].prefs?.[prefPart]||0) + 1;
+    const seasonPart = obs.season || "";
+    if (seasonPart) grouped[key].seasons = grouped[key].seasons || {};
+    if (seasonPart) grouped[key].seasons[seasonPart] = (grouped[key].seasons?.[seasonPart]||0) + 1;
   }
   // NEW判定
   const recentEntries = Object.values(grouped).sort((a,b)=>b.latestCreatedAt?.localeCompare(a.latestCreatedAt||"")||0).slice(0,5);
@@ -444,6 +447,12 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
     if (!prefs || Object.keys(prefs).length===0) return "その他";
     return Object.entries(prefs).sort((a,b)=>b[1]-a[1])[0][0];
   };
+  const mainSeason = (e) => {
+    const s = e.seasons;
+    if (!s || Object.keys(s).length===0) return "その他";
+    return Object.entries(s).sort((a,b)=>b[1]-a[1])[0][0];
+  };
+  const SEASON_ORDER = ["留鳥","漂鳥","夏鳥","冬鳥","旅鳥","迷鳥","外来種","その他"];
   const entries = Object.values(grouped).sort((a,b)=>{
     if (sortMode==="alpha")    return a.species.localeCompare(b.species,"ja");
     if (sortMode==="category") {
@@ -453,6 +462,10 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
     if (sortMode==="recent")   return (b.latestCreatedAt||"").localeCompare(a.latestCreatedAt||"");
     if (sortMode==="env")      return mainEnv(a).localeCompare(mainEnv(b),"ja") || a.species.localeCompare(b.species,"ja");
     if (sortMode==="pref")     return mainPref(a).localeCompare(mainPref(b),"ja") || a.species.localeCompare(b.species,"ja");
+    if (sortMode==="season") {
+      const si = (e) => { const i=SEASON_ORDER.indexOf(mainSeason(e)); return i<0?99:i; };
+      return si(a)!==si(b) ? si(a)-si(b) : a.species.localeCompare(b.species,"ja");
+    }
     return b.count - a.count;
   });
   const catLabel = (catId) => CATEGORIES.find(c=>c.id===catId)?.label||catId;
@@ -498,6 +511,7 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
         <button style={sortBtnStyle(sortMode==="count")}    onClick={()=>setSortMode("count")}>記録数順</button>
         <button style={sortBtnStyle(sortMode==="alpha")}    onClick={()=>setSortMode("alpha")}>あいうえお</button>
         <button style={sortBtnStyle(sortMode==="category")} onClick={()=>setSortMode("category")}>目別</button>
+        <button style={sortBtnStyle(sortMode==="season")}   onClick={()=>setSortMode("season")}>渡り区分別</button>
         <button style={sortBtnStyle(sortMode==="pref")}     onClick={()=>setSortMode("pref")}>都道府県別</button>
         <button style={sortBtnStyle(sortMode==="env")}      onClick={()=>setSortMode("env")}>観察環境別</button>
         <button style={sortBtnStyle(sortMode==="recent")}   onClick={()=>setSortMode("recent")}>追加順</button>
@@ -559,7 +573,34 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
                   </React.Fragment>
                 ));
               })()
-            ) : sortMode==="env" ? (
+            ) : sortMode==="season" ? (
+              (() => {
+                const seasonGroups = {};
+                entries.forEach(e => {
+                  const s = mainSeason(e);
+                  if (!seasonGroups[s]) seasonGroups[s] = [];
+                  seasonGroups[s].push(e);
+                });
+                return SEASON_ORDER.filter(s=>seasonGroups[s]).map(season=>(
+                  <React.Fragment key={season}>
+                    <div style={{padding:"8px 14px",fontSize:"12px",color:"#F5F0E8",background:"#4A6B3C",letterSpacing:".08em",marginTop:"8px",borderRadius:"6px",fontWeight:"600"}}>
+                      {season}　<span style={{fontWeight:"400",fontSize:"11px",opacity:.85}}>{seasonGroups[season].length}種</span>
+                    </div>
+                    {seasonGroups[season].map((e,i)=>{
+                      const isNew = newSpeciesKeys.has(`${e.catId}__${e.species}`);
+                      return (
+                        <div key={i} className="sp-item" onClick={()=>onSelectSpecies(e.catId, e.species)}>
+                          <div>
+                            <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}{isNew&&<span style={{marginLeft:"6px",fontSize:"10px",background:"#C04040",color:"#fff",padding:"1px 6px",borderRadius:"8px",letterSpacing:".05em"}}>NEW</span>}</span>
+                            <div style={{fontSize:"10px",color:"#8A7A5A",marginTop:"2px"}}>{catLabel(e.catId)}</div>
+                          </div>
+                          <span className="sp-cnt">{e.count}件</span>
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ));
+              })()
               // 観察環境別グループ表示
               (() => {
                 const envGroups = {};
