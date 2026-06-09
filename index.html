@@ -410,7 +410,7 @@ function JapanMap({ observedPrefs }) {
 
 function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpecies }) {
   const [filterAuthor, setFilterAuthor] = useState("");
-  const [sortMode, setSortMode] = useState("count"); // count | alpha | category | recent | env | pref | season
+  const [sortMode, setSortMode] = useState("count"); // count | alpha | category | recent | env | pref | season | month
   const authors = [...new Set(allObs.map(o=>o.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ja"));
   const filteredObs = filterAuthor ? allObs.filter(o=>o.author===filterAuthor) : allObs;
   const grouped = {};
@@ -432,6 +432,10 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
     const seasonPart = obs.season || "";
     if (seasonPart) grouped[key].seasons = grouped[key].seasons || {};
     if (seasonPart) grouped[key].seasons[seasonPart] = (grouped[key].seasons?.[seasonPart]||0) + 1;
+    // 月別集計（date から年月を抽出）
+    const monthPart = obs.date ? obs.date.slice(0,7) : ""; // "YYYY-MM"
+    if (monthPart) grouped[key].months = grouped[key].months || {};
+    if (monthPart) grouped[key].months[monthPart] = (grouped[key].months?.[monthPart]||0) + 1;
   }
   // NEW判定
   const recentEntries = Object.values(grouped).sort((a,b)=>b.latestCreatedAt?.localeCompare(a.latestCreatedAt||"")||0).slice(0,5);
@@ -452,6 +456,16 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
     if (!s || Object.keys(s).length===0) return "その他";
     return Object.entries(s).sort((a,b)=>b[1]-a[1])[0][0];
   };
+  const mainMonth = (e) => {
+    const m = e.months;
+    if (!m || Object.keys(m).length===0) return "不明";
+    return Object.entries(m).sort((a,b)=>b[1]-a[1])[0][0]; // "YYYY-MM"
+  };
+  const fmtMonth = (ym) => { // "YYYY-MM" → "YYYY年M月"
+    if (!ym || ym==="不明") return "不明";
+    const [y,m] = ym.split("-");
+    return `${y}年${parseInt(m)}月`;
+  };
   const SEASON_ORDER = ["留鳥","漂鳥","夏鳥","冬鳥","旅鳥","迷鳥","外来種","その他"];
   const entries = Object.values(grouped).sort((a,b)=>{
     if (sortMode==="alpha")    return a.species.localeCompare(b.species,"ja");
@@ -466,6 +480,7 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
       const si = (e) => { const i=SEASON_ORDER.indexOf(mainSeason(e)); return i<0?99:i; };
       return si(a)!==si(b) ? si(a)-si(b) : a.species.localeCompare(b.species,"ja");
     }
+    if (sortMode==="month")    return mainMonth(b).localeCompare(mainMonth(a)) || a.species.localeCompare(b.species,"ja");
     return b.count - a.count;
   });
   const catLabel = (catId) => CATEGORIES.find(c=>c.id===catId)?.label||catId;
@@ -512,6 +527,7 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
         <button style={sortBtnStyle(sortMode==="alpha")}    onClick={()=>setSortMode("alpha")}>あいうえお</button>
         <button style={sortBtnStyle(sortMode==="category")} onClick={()=>setSortMode("category")}>目別</button>
         <button style={sortBtnStyle(sortMode==="season")}   onClick={()=>setSortMode("season")}>渡り区分別</button>
+        <button style={sortBtnStyle(sortMode==="month")}    onClick={()=>setSortMode("month")}>月別</button>
         <button style={sortBtnStyle(sortMode==="pref")}     onClick={()=>setSortMode("pref")}>都道府県別</button>
         <button style={sortBtnStyle(sortMode==="env")}      onClick={()=>setSortMode("env")}>観察環境別</button>
         <button style={sortBtnStyle(sortMode==="recent")}   onClick={()=>setSortMode("recent")}>追加順</button>
@@ -600,6 +616,46 @@ function AllObsView({ allObs, loading, totalObs, CATEGORIES, onBack, onSelectSpe
                     })}
                   </React.Fragment>
                 ));
+              })()
+            ) : sortMode==="month" ? (
+              (() => {
+                // 月ごとに「その月に観察された種」を収集
+                const monthGroups = {};
+                filteredObs.forEach(obs => {
+                  const ym = obs.date ? obs.date.slice(0,7) : null;
+                  if (!ym) return;
+                  if (!monthGroups[ym]) monthGroups[ym] = {};
+                  const key = `${obs.category}__${obs.species}`;
+                  if (!monthGroups[ym][key]) monthGroups[ym][key] = {
+                    catId: obs.category, species: obs.species,
+                    count: 0, hasPhoto: false,
+                  };
+                  monthGroups[ym][key].count++;
+                  if (obs.photos?.length>0) monthGroups[ym][key].hasPhoto = true;
+                });
+                const sortedMonths = Object.keys(monthGroups).sort((a,b)=>b.localeCompare(a));
+                return sortedMonths.map(ym=>{
+                  const speciesList = Object.values(monthGroups[ym]).sort((a,b)=>a.species.localeCompare(b.species,"ja"));
+                  return (
+                    <React.Fragment key={ym}>
+                      <div style={{padding:"8px 14px",fontSize:"12px",color:"#F5F0E8",background:"#4A6B3C",letterSpacing:".08em",marginTop:"8px",borderRadius:"6px",fontWeight:"600"}}>
+                        {fmtMonth(ym)}　<span style={{fontWeight:"400",fontSize:"11px",opacity:.85}}>{speciesList.length}種</span>
+                      </div>
+                      {speciesList.map((e,i)=>{
+                        const isNew = newSpeciesKeys.has(`${e.catId}__${e.species}`);
+                        return (
+                          <div key={i} className="sp-item" onClick={()=>onSelectSpecies(e.catId, e.species)}>
+                            <div>
+                              <span className="sp-name">{e.hasPhoto?"📷 ":""}{e.species}{isNew&&<span style={{marginLeft:"6px",fontSize:"10px",background:"#C04040",color:"#fff",padding:"1px 6px",borderRadius:"8px",letterSpacing:".05em"}}>NEW</span>}</span>
+                              <div style={{fontSize:"10px",color:"#8A7A5A",marginTop:"2px"}}>{catLabel(e.catId)}</div>
+                            </div>
+                            <span className="sp-cnt">{e.count}件</span>
+                          </div>
+                        );
+                      })}
+                    </React.Fragment>
+                  );
+                });
               })()
             ) : sortMode==="env" ? (
               // 観察環境別グループ表示
