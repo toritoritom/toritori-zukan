@@ -144,8 +144,17 @@ async function extractExif(file) {
     const fl     = exif.FocalLength ? `${Math.round(exif.FocalLength)}mm` : null;
     const isoVal = exif.ISO || exif.ISOSpeedRatings || exif.PhotographicSensitivity;
     const iso    = isoVal ? `ISO${isoVal}` : null;
+    // 撮影時刻
+    const dto    = exif.DateTimeOriginal || exif.DateTime || null;
+    let shotTime = null;
+    if (dto) {
+      const d = dto instanceof Date ? dto : new Date(dto);
+      if (!isNaN(d)) {
+        shotTime = d.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+      }
+    }
     if (!camera && !lens && !f && !ss) return null;
-    return { camera, lens, f, ss, ev, fl, iso };
+    return { camera, lens, f, ss, ev, fl, iso, shotTime };
   } catch(e) { console.warn("EXIF読み取り失敗:", e); return null; }
 }
 async function uploadOriginal(file) {
@@ -1411,11 +1420,12 @@ function App(){
                       </div>
                     )}
                     <div className="lb-exif-row" style={{marginTop:"4px"}}>
-                      {exif.f   && <span>絞り：{exif.f}</span>}
-                      {exif.ss  && <span>SS：{exif.ss}</span>}
-                      {exif.iso && <span>{exif.iso}</span>}
-                      {exif.ev  && <span>露出補正：{exif.ev}</span>}
-                      {exif.fl  && <span>焦点距離：{exif.fl}</span>}
+                      {exif.f        && <span>絞り：{exif.f}</span>}
+                      {exif.ss       && <span>SS：{exif.ss}</span>}
+                      {exif.iso      && <span>{exif.iso}</span>}
+                      {exif.ev       && <span>露出補正：{exif.ev}</span>}
+                      {exif.fl       && <span>焦点距離：{exif.fl}</span>}
+                      {exif.shotTime && <span>撮影時刻：{exif.shotTime}</span>}
                     </div>
                   </div>
                 )}
