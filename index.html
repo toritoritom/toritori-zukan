@@ -158,13 +158,18 @@ async function extractExif(file) {
     return { camera, lens, f, ss, ev, fl, iso, shotTime };
   } catch(e) { console.warn("EXIF読み取り失敗:", e); return null; }
 }
-async function uploadOriginal(file) {
-  const ext = file.name.split(".").pop() || "jpg";
-  const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-  const { error } = await supabase.storage.from("bird-photos").upload(path, file, { upsert: false });
-  if (error) return null;
-  const { data } = supabase.storage.from("bird-photos").getPublicUrl(path);
-  return data.publicUrl;
+const R2_WORKER_URL = "https://toritori-upload.tomtomlife-11xp.workers.dev";
+
+// オリジナル画像をCloudflare R2にアップロード
+async function uploadToR2(file) {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(R2_WORKER_URL, { method: "POST", body: formData });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.url || null;
+  } catch { return null; }
 }
 
 // 気象コード変換テーブル
@@ -974,11 +979,14 @@ function App(){
         ? {...o, season:form.season, location:location, date:form.date, memo:form.memo, author:form.author, photos:photoData, weather:weatherData}
         : o));
     } else {
-      // 新規追加：圧縮版をDBに保存
-      const photoData = photos.map(p => ({
-        thumb: p.dataUrl,
-        original: p.dataUrl,
-        exif: p.exif || null,
+      // 新規追加：圧縮版をDBに、オリジナルをR2に保存
+      const photoData = await Promise.all(photos.map(async p => {
+        const origUrl = p.originalFile ? await uploadToR2(p.originalFile) : null;
+        return {
+          thumb: p.dataUrl,
+          original: origUrl || p.dataUrl,
+          exif: p.exif || null,
+        };
       }));
       const { data: inserted, error } = await supabase.from("observations").insert([{
         category: activeCategory,
