@@ -82,6 +82,317 @@ const SPECIES_LIST = {
   inko:["ワカケホンセイインコ","ホンセイインコ","オキナインコ","コザクラインコ","セキセイインコ"],
 };
 
+const BIRD_DATA = {
+  "コクガン": {kanji:"黒雁",reading:"ブランタ・ベルニクラ",length:"60〜67cm"},
+  "ヒシクイ": {kanji:"菱食",reading:"アンセル・ファバリス",length:"72〜90cm"},
+  "マガン": {kanji:"真雁",reading:"アンセル・アルビフロンス",length:"65〜78cm"},
+  "カリガネ": {kanji:"雁",reading:"アンセル・エリトロプス",length:"53〜66cm"},
+  "コブハクチョウ": {kanji:"瘤白鳥",reading:"キグヌス・オロル",length:"125〜170cm"},
+  "コハクチョウ": {kanji:"小白鳥",reading:"キグヌス・コルムビアヌス・ベウィッキイ",length:"115〜140cm"},
+  "オオハクチョウ": {kanji:"大白鳥",reading:"キグヌス・キグヌス",length:"140〜165cm"},
+  "ツクシガモ": {kanji:"筑紫鴨",reading:"タドルナ・タドルナ",length:"58〜67cm"},
+  "オシドリ": {kanji:"鴛鴦",reading:"アイクス・ガレリクラータ",length:"41〜47cm"},
+  "トモエガモ": {kanji:"巴鴨",reading:"スパトゥラ・フォルモサ",length:"37〜43cm"},
+  "シマアジ": {kanji:"縞味",reading:"スパトゥラ・クェルクェドゥラ",length:"37〜41cm"},
+  "ハシビロガモ": {kanji:"嘴広鴨",reading:"スパトゥラ・クリペアタ",length:"44〜52cm"},
+  "オカヨシガモ": {kanji:"丘葦鴨",reading:"マレカ・ストレペラ",length:"46〜57cm"},
+  "ヨシガモ": {kanji:"葦鴨",reading:"マレカ・ファルカータ",length:"46〜53cm"},
+  "ヒドリガモ": {kanji:"緋鳥鴨",reading:"マレカ・ペネロペ",length:"45〜51cm"},
+  "アメリカヒドリ": {kanji:"亜米利加緋鳥鴨",reading:"マレカ・アメリカーナ",length:"45〜56cm"},
+  "カルガモ": {kanji:"軽鴨",reading:"アナス・ゾノリンクス",length:"53〜67cm"},
+  "マガモ": {kanji:"真鴨",reading:"アナス・プラティリンコス",length:"50〜65cm"},
+  "オナガガモ": {kanji:"尾長鴨",reading:"アナス・アクータ",length:"オス61〜76cm・メス51〜57cm"},
+  "コガモ": {kanji:"小鴨",reading:"アナス・クレッカ",length:"34〜38cm"},
+  "ホシハジロ": {kanji:"星羽白",reading:"アイティア・フェリナ",length:"42〜49cm"},
+  "キンクロハジロ": {kanji:"金黒羽白",reading:"アイティア・フリグラ",length:"40〜47cm"},
+  "スズガモ": {kanji:"鈴鴨",reading:"アイティア・マリラ",length:"40〜51cm"},
+  "シノリガモ": {kanji:"晨鴨",reading:"ヒストリオニクス・ヒストリオニクス",length:"38〜45cm"},
+  "クロガモ": {kanji:"黒鴨",reading:"メラニッタ・ニグラ",length:"44〜54cm"},
+  "ビロードキンクロ": {kanji:"天鵞絨金黒",reading:"メラニッタ・フスカ",length:"51〜58cm"},
+  "コオリガモ": {kanji:"氷鴨",reading:"クランギュラ・ヒエマリス",length:"オス47〜60cm・メス35〜45cm"},
+  "ホオジロガモ": {kanji:"頬白鴨",reading:"ブケファラ・クランギュラ",length:"40〜51cm"},
+  "ミコアイサ": {kanji:"巫女秋沙",reading:"メルグルス・アルベルルス",length:"38〜44cm"},
+  "カワアイサ": {kanji:"川秋沙",reading:"メルグス・メルガンセル",length:"58〜68cm"},
+  "ウミアイサ": {kanji:"海秋沙",reading:"メルグス・セッラトル",length:"52〜58cm"},
+  "エゾライチョウ": {kanji:"蝦夷雷鳥",reading:"テトラステス・ボナシア",length:"35〜37cm"},
+  "ライチョウ": {kanji:"雷鳥",reading:"ラゴプス・ムータ",length:"36〜38cm"},
+  "ヤマドリ": {kanji:"山鳥",reading:"シルマティクス・ゾエメリンギイ",length:"オス100〜135cm・メス52〜57cm"},
+  "キジ": {kanji:"雉",reading:"ファシアヌス・コルキクス",length:"オス75〜89cm・メス53〜61cm"},
+  "ウズラ": {kanji:"鶉",reading:"コトゥルニクス・ヤポニカ",length:"18〜20cm"},
+  "コジュケイ": {kanji:"小綬鶏",reading:"バンブシコラ・ソラキクス",length:"27cm"},
+  "ヨタカ": {kanji:"夜鷹",reading:"カプリムルグス・インディクス",length:"27〜32cm"},
+  "ハリオアマツバメ": {kanji:"針尾雨燕",reading:"ヒルンダプス・カウダクトゥス",length:"19〜22cm"},
+  "アマツバメ": {kanji:"雨燕",reading:"アプス・パキプス",length:"17〜21cm"},
+  "ヒメアマツバメ": {kanji:"姫雨燕",reading:"アプス・ニパレンシス",length:"13cm"},
+  "ジュウイチ": {kanji:"十一",reading:"ヒエロコッキュクス・ファガニイ",length:"29〜32cm"},
+  "ホトトギス": {kanji:"時鳥",reading:"ヒエロコッキュクス・ポリオケファルス",length:"27〜30cm"},
+  "ツツドリ": {kanji:"筒鳥",reading:"ヒエロコッキュクス・フモサス",length:"30〜35cm"},
+  "カッコウ": {kanji:"郭公",reading:"ククルス・カノルス",length:"32〜36cm"},
+  "カラスバト": {kanji:"烏鳩",reading:"コルンバ・ヤポニカ",length:"43cm"},
+  "キジバト": {kanji:"雉鳩",reading:"ストレプトペリア・オリエンタリス",length:"33cm"},
+  "シラコバト": {kanji:"白子鳩",reading:"ストレプトペリア・デカオクト",length:"31〜33cm"},
+  "アオバト": {kanji:"青鳩",reading:"トレロン・シーボルディイ",length:"33cm"},
+  "ズアカアオバト": {kanji:"頭赤青鳩",reading:"トレロン・ポムパドゥラ",length:"27〜32cm"},
+  "カワラバト": {kanji:"河原鳩",reading:"コルンバ・リウィア",length:"29〜37cm"},
+  "クイナ": {kanji:"水鶏",reading:"ラッルス・アクァティクス",length:"28cm"},
+  "ヤンバルクイナ": {kanji:"山原水鶏",reading:"ハイポタエニジア・オキナワエ",length:"30cm"},
+  "バン": {kanji:"鷭",reading:"ガッリヌラ・クロロプス",length:"32cm"},
+  "オオバン": {kanji:"大鷭",reading:"フリカ・アトラ",length:"36〜39cm"},
+  "ヒクイナ": {kanji:"緋水鶏",reading:"ザポルニア・プスィラ",length:"19〜23cm"},
+  "タンチョウ": {kanji:"丹頂",reading:"グルス・ヤポネンシス",length:"136〜140cm"},
+  "マナヅル": {kanji:"真名鶴",reading:"アンティゴネ・ウィゴ",length:"112〜125cm"},
+  "ナベヅル": {kanji:"鍋鶴",reading:"グルス・モナカ",length:"96〜100cm"},
+  "アネハヅル": {kanji:"姉羽鶴",reading:"アンティゴネ・ウィルゴ",length:"90〜100cm"},
+  "カイツブリ": {kanji:"鳰",reading:"タキバプトゥス・ルフィコッリス",length:"25〜29cm"},
+  "アカエリカイツブリ": {kanji:"赤襟鳰",reading:"ポディケプス・グリセゲナ",length:"43〜46cm"},
+  "カンムリカイツブリ": {kanji:"冠鳰",reading:"ポディケプス・クリスタトゥス",length:"46〜51cm"},
+  "ミミカイツブリ": {kanji:"耳鳰",reading:"ポディケプス・アウリトゥス",length:"30〜38cm"},
+  "ハジロカイツブリ": {kanji:"羽白鳰",reading:"ポディケプス・ニグリコッリス",length:"28〜34cm"},
+  "ミヤコドリ": {kanji:"都鳥",reading:"ハエマトプス・オストラレグス",length:"40〜46cm"},
+  "タゲリ": {kanji:"田鳧",reading:"ヴァネッルス・ヴァネッルス",length:"28〜31cm"},
+  "ケリ": {kanji:"計里",reading:"ヴァネッルス・キネレウス",length:"35〜37cm"},
+  "ムナグロ": {kanji:"胸黒",reading:"プルウィアリス・フルウァ",length:"23〜26cm"},
+  "ダイゼン": {kanji:"大膳",reading:"プルウィアリス・スクァタローラ",length:"27〜30cm"},
+  "イカルチドリ": {kanji:"揚羽千鳥",reading:"カラドリウス・プラエケッロスス",length:"19〜21cm"},
+  "コチドリ": {kanji:"小千鳥",reading:"カラドリウス・ドゥビウス",length:"14〜17cm"},
+  "シロチドリ": {kanji:"白千鳥",reading:"カラドリウス・アレクサンドリヌス",length:"15〜17cm"},
+  "メダイチドリ": {kanji:"目大千鳥",reading:"カラドリウス・モンゴルス",length:"17〜21cm"},
+  "オオメダイチドリ": {kanji:"大目大千鳥",reading:"カラドリウス・ヘスペリウス",length:"19〜21cm"},
+  "キョウジョシギ": {kanji:"京女鷸",reading:"アレナリア・インテルプレス",length:"21〜25cm"},
+  "オバシギ": {kanji:"大羽鷸",reading:"カリドリス・テヌイロストリス",length:"26〜28cm"},
+  "コオバシギ": {kanji:"小大羽鷸",reading:"カリドリス・カヌトゥス",length:"23〜26cm"},
+  "トウネン": {kanji:"当年",reading:"カリドリス・ルフィコッリス",length:"13〜16cm"},
+  "ハマシギ": {kanji:"浜鷸",reading:"カリドリス・アルピナ",length:"16〜22cm"},
+  "ミユビシギ": {kanji:"三趾鷸",reading:"カリドリス・アルバ",length:"18〜21cm"},
+  "ヘラシギ": {kanji:"箆鷸",reading:"カリドリス・ピグメウス",length:"14〜16cm"},
+  "ウズラシギ": {kanji:"鶉鷸",reading:"カリドリス・アクミナータ",length:"17〜21cm"},
+  "オジロトウネン": {kanji:"尾白当年",reading:"カリドリス・テムミンキイ",length:"13〜15cm"},
+  "ヒバリシギ": {kanji:"雲雀鷸",reading:"カリドリス・スブミヌータ",length:"12〜14cm"},
+  "エリマキシギ": {kanji:"襟巻鷸",reading:"カリドリス・プグナクス",length:"オス26〜32cm・メス20〜25cm"},
+  "タシギ": {kanji:"田鷸",reading:"ガッリナゴ・ガッリナゴ",length:"25〜27cm"},
+  "オオジシギ": {kanji:"大地鷸",reading:"ガッリナゴ・ハルドウィッキイ",length:"29〜31cm"},
+  "ヤマシギ": {kanji:"山鷸",reading:"スコロパクス・ルスティコラ",length:"33〜35cm"},
+  "チュウシャクシギ": {kanji:"中杓鷸",reading:"ヌメニウス・ファエオプス",length:"40〜46cm"},
+  "ホウロクシギ": {kanji:"焙烙鷸",reading:"ヌメニウス・マダガスカリエンシス",length:"53〜66cm"},
+  "ダイシャクシギ": {kanji:"大杓鷸",reading:"ヌメニウス・アルクァータ",length:"50〜60cm"},
+  "オオソリハシシギ": {kanji:"大反嘴鷸",reading:"リモサ・ラッポニカ",length:"37〜41cm"},
+  "オグロシギ": {kanji:"尾黒鷸",reading:"リモサ・リモサ",length:"36〜44cm"},
+  "イソシギ": {kanji:"磯鷸",reading:"アクティティス・ヒポレウコス",length:"19〜21cm"},
+  "ソリハシシギ": {kanji:"反嘴鷸",reading:"クセヌス・キネレウス",length:"21〜26cm"},
+  "クサシギ": {kanji:"草鷸",reading:"トリンガ・オキロプス",length:"21〜24cm"},
+  "タカブシギ": {kanji:"鷹斑鷸",reading:"トリンガ・グラレオラ",length:"19〜21cm"},
+  "キアシシギ": {kanji:"黄脚鷸",reading:"トリンガ・ブレウィペス",length:"24〜25cm"},
+  "アカアシシギ": {kanji:"赤脚鷸",reading:"トリンガ・トタヌス",length:"27〜29cm"},
+  "アオアシシギ": {kanji:"青脚鷸",reading:"トリンガ・ネブラリア",length:"30〜35cm"},
+  "ツルシギ": {kanji:"鶴鷸",reading:"トリンガ・エリトロプス",length:"29〜32cm"},
+  "ツバメチドリ": {kanji:"燕千鳥",reading:"グラレオラ・マルディバルム",length:"19cm"},
+  "ユリカモメ": {kanji:"百合鴎",reading:"クロイコケファルス・リジブンドゥス",length:"37〜43cm"},
+  "ズグロカモメ": {kanji:"頭黒鴎",reading:"サロガ・サウンデルシイ",length:"29〜32cm"},
+  "ウミネコ": {kanji:"海猫",reading:"ラルス・クラッシロストリス",length:"44〜47cm"},
+  "カモメ": {kanji:"鴎",reading:"ラルス・カムチャッティクス",length:"40〜46cm"},
+  "セグロカモメ": {kanji:"背黒鴎",reading:"ラルス・アルゲンタトゥス",length:"55〜67cm"},
+  "オオセグロカモメ": {kanji:"大背黒鴎",reading:"ラルス・スキャリネンシス",length:"58〜68cm"},
+  "ワシカモメ": {kanji:"鷲鴎",reading:"ラルス・グラウケスケンス",length:"60〜72cm"},
+  "シロカモメ": {kanji:"白鴎",reading:"ラルス・ヒュペルボレウス",length:"64〜77cm"},
+  "コアジサシ": {kanji:"小鯵刺",reading:"ステルヌラ・アルビフロンス",length:"22〜28cm"},
+  "アジサシ": {kanji:"鯵刺",reading:"ステルナ・ヒルンド",length:"31〜38cm"},
+  "ベニアジサシ": {kanji:"紅鯵刺",reading:"ステルナ・ドゥガッリイ",length:"36〜42cm"},
+  "エリグロアジサシ": {kanji:"襟黒鯵刺",reading:"オヌコプリオン・アナエテトゥス",length:"36〜40cm"},
+  "エトピリカ": {kanji:"絵鳥冠",reading:"フラテルクラ・キッルカタ",length:"38〜41cm"},
+  "ウトウ": {kanji:"善知鳥",reading:"シュンリランプス・ウルガリス",length:"38〜40cm"},
+  "ウミスズメ": {kanji:"海雀",reading:"シュンリランプス・アンティクウス",length:"26cm"},
+  "ケイマフリ": {kanji:"毛馬振",reading:"ケッファルス・コロンバ",length:"32〜35cm"},
+  "アビ": {kanji:"阿比",reading:"ガウィア・ステッラタ",length:"53〜69cm"},
+  "オオハム": {kanji:"大波",reading:"ガウィア・アルクティカ",length:"63〜75cm"},
+  "シロエリオオハム": {kanji:"白襟大波",reading:"ガウィア・パキフィカ",length:"58〜74cm"},
+  "フルマカモメ": {kanji:"振れ鴎",reading:"フルマルス・グラキアリス",length:"43〜52cm"},
+  "オオミズナギドリ": {kanji:"大水薙鳥",reading:"カロネクトリス・クリータクス",length:"54〜57cm"},
+  "コアホウドリ": {kanji:"小信天翁",reading:"プホエバストリア・イムムタビリス",length:"68〜73cm"},
+  "アホウドリ": {kanji:"信天翁",reading:"プホエバストリア・アルバトルス",length:"84〜91cm"},
+  "クロアシアホウドリ": {kanji:"黒脚信天翁",reading:"プホエバストリア・ニグリペス",length:"68〜74cm"},
+  "コウノトリ": {kanji:"鸛",reading:"キコニア・ボイキコニア",length:"112cm"},
+  "カワウ": {kanji:"川鵜",reading:"ファラクロコラクス・カルボ",length:"80〜101cm"},
+  "ウミウ": {kanji:"海鵜",reading:"ファラクロコラクス・カピッラトゥス",length:"84〜92cm"},
+  "ヒメウ": {kanji:"姫鵜",reading:"ファラクロコラクス・ペラギクス",length:"63〜73cm"},
+  "カツオドリ": {kanji:"鰹鳥",reading:"スラ・ロイキガステル",length:"72〜81cm"},
+  "トキ": {kanji:"朱鷺",reading:"ニッポニア・ニッポン",length:"55〜77cm"},
+  "ヘラサギ": {kanji:"箆鷺",reading:"プラタレア・レウコロディア",length:"70〜95cm"},
+  "クロツラヘラサギ": {kanji:"黒面箆鷺",reading:"プラタレア・マイノル",length:"72〜76cm"},
+  "ゴイサギ": {kanji:"五位鷺",reading:"ニュクティコラクス・ニュクティコラクス",length:"58〜65cm"},
+  "ミゾゴイ": {kanji:"溝五位鷺",reading:"ゲオルコキュクス・エウリュトゥス",length:"49〜52cm"},
+  "ヨシゴイ": {kanji:"葦五位",reading:"イクソブリュクス・シネンシス",length:"29〜38cm"},
+  "サンカノゴイ": {kanji:"山家五位鷺",reading:"ボタウルス・ステッラリス",length:"69〜81cm"},
+  "ササゴイ": {kanji:"笹五位",reading:"ブトリデス・ストリアトゥス",length:"40〜48cm"},
+  "アカガシラサギ": {kanji:"赤頭鷺",reading:"アルデオラ・バッコス",length:"45〜51cm"},
+  "アマサギ": {kanji:"猩々鷺",reading:"ブウバルクス・イビス",length:"46〜56cm"},
+  "アオサギ": {kanji:"蒼鷺",reading:"アルデア・キネレア",length:"84〜104cm"},
+  "ダイサギ": {kanji:"大鷺",reading:"アルデア・アルバ",length:"86〜102cm"},
+  "チュウサギ": {kanji:"中鷺",reading:"アルデア・インテルメディア",length:"62〜72cm"},
+  "コサギ": {kanji:"小鷺",reading:"エグレッタ・ガルゼッタ",length:"55〜65cm"},
+  "クロサギ": {kanji:"黒鷺",reading:"エグレッタ・サクラ",length:"55〜67cm"},
+  "ムラサキサギ": {kanji:"紫鷺",reading:"アルデア・プルプレア",length:"78〜90cm"},
+  "ミサゴ": {kanji:"鶚",reading:"パンディオン・ハリアエトゥス",length:"54〜64cm"},
+  "ハチクマ": {kanji:"蜂熊",reading:"ペルニス・プティロリュンクス",length:"57〜61cm"},
+  "カンムリワシ": {kanji:"冠鷲",reading:"スピニクス・クルーリス",length:"51〜56cm"},
+  "クマタカ": {kanji:"熊鷹",reading:"ニサエトゥス・ニパレンシス",length:"72〜80cm"},
+  "イヌワシ": {kanji:"犬鷲",reading:"アクィラ・クリュサエトス",length:"75〜95cm"},
+  "オジロワシ": {kanji:"尾白鷲",reading:"ハリアエエトゥス・アルビキッラ",length:"70〜92cm"},
+  "オオワシ": {kanji:"大鷲",reading:"ハリアエエトゥス・ペラギクス",length:"85〜105cm"},
+  "サシバ": {kanji:"差羽",reading:"ブテアストゥル・インディクス",length:"47〜51cm"},
+  "ノスリ": {kanji:"鵟",reading:"ブテオ・ブテオ",length:"50〜58cm"},
+  "ケアシノスリ": {kanji:"毛脚鵟",reading:"ブテオ・ラゴプス",length:"50〜61cm"},
+  "ハイタカ": {kanji:"灰鷹",reading:"アッキピテル・ニスス",length:"オス28〜34cm・メス35〜41cm"},
+  "オオタカ": {kanji:"大鷹",reading:"アッキピテル・ゲンティリス",length:"オス47〜53cm・メス54〜59cm"},
+  "ツミ": {kanji:"雀鷹",reading:"アッキピテル・グラリイ",length:"オス27〜30cm・メス30〜34cm"},
+  "チュウヒ": {kanji:"沢鵟",reading:"キルクス・スピロノトゥス",length:"45〜50cm"},
+  "ハイイロチュウヒ": {kanji:"灰色沢鵟",reading:"キルクス・キュアネウス",length:"43〜52cm"},
+  "マダラチュウヒ": {kanji:"斑沢鵟",reading:"キルクス・メラノレウコス",length:"43〜50cm"},
+  "トビ": {kanji:"鳶",reading:"ミルウス・ミグランス",length:"58〜69cm"},
+  "アカハラダカ": {kanji:"赤腹鷹",reading:"アッキピテル・ソロエンシス",length:"25〜30cm"},
+  "フクロウ": {kanji:"梟",reading:"ストリクス・ウラレンシス",length:"45〜54cm"},
+  "シマフクロウ": {kanji:"島梟",reading:"ブボ・ブラキュオトゥス",length:"69〜71cm"},
+  "ワシミミズク": {kanji:"鷲木菟",reading:"ブボ・ブボ",length:"59〜75cm"},
+  "コミミズク": {kanji:"小耳木菟",reading:"アシオ・フラメウス",length:"34〜42cm"},
+  "トラフズク": {kanji:"虎斑木菟",reading:"アシオ・オトゥス",length:"35〜40cm"},
+  "アオバズク": {kanji:"青葉木菟",reading:"ニンノクス・スキュトゥラ",length:"29cm"},
+  "コノハズク": {kanji:"木葉木菟",reading:"オトゥス・スコプス",length:"19〜21cm"},
+  "ヤツガシラ": {kanji:"戴勝",reading:"ウパパ・エポプス",length:"26〜32cm"},
+  "ブッポウソウ": {kanji:"仏法僧",reading:"エウリュストモス・オリエンタリス",length:"30cm"},
+  "カワセミ": {kanji:"翡翠",reading:"アルケド・アッティス",length:"17cm"},
+  "アカショウビン": {kanji:"赤翡翠",reading:"ハルキュオン・コロマンダ",length:"27〜28cm"},
+  "ヤマセミ": {kanji:"山翡翠",reading:"メガケルレ・ルガタ",length:"38cm"},
+  "ハチクイ": {kanji:"蜂食",reading:"メロプス・オリエンタリス",length:"27〜29cm"},
+  "アリスイ": {kanji:"蟻吸",reading:"ユンクス・トルクィッラ",length:"17cm"},
+  "コゲラ": {kanji:"小啄木鳥",reading:"デンドロコポス・キイキイ",length:"15cm"},
+  "アカゲラ": {kanji:"赤啄木鳥",reading:"デンドロコポス・マヨル",length:"23cm"},
+  "オオアカゲラ": {kanji:"大赤啄木鳥",reading:"デンドロコポス・レウコトス",length:"26〜28cm"},
+  "ノグチゲラ": {kanji:"野口啄木鳥",reading:"サフィオピクス・ノウグウキイ",length:"31〜32cm"},
+  "クマゲラ": {kanji:"熊啄木鳥",reading:"ドリュオコプス・マルティウス",length:"45〜47cm"},
+  "アオゲラ": {kanji:"緑啄木鳥",reading:"ピクス・アウィデゥス",length:"29〜30cm"},
+  "ヤマゲラ": {kanji:"山緑啄木鳥",reading:"ピクス・カヌス",length:"30〜33cm"},
+  "チョウゲンボウ": {kanji:"長元坊",reading:"ファルコ・ティヌンクルス",length:"オス32〜36cm・メス35〜38cm"},
+  "コチョウゲンボウ": {kanji:"小長元坊",reading:"ファルコ・コルムバリウス",length:"オス25〜32cm・メス27〜35cm"},
+  "チゴハヤブサ": {kanji:"稚児隼",reading:"ファルコ・スブブテオ",length:"28〜35cm"},
+  "ハヤブサ": {kanji:"隼",reading:"ファルコ・ペレグリヌス",length:"オス38〜45cm・メス46〜51cm"},
+  "シロハヤブサ": {kanji:"白隼",reading:"ファルコ・ルスティコルス",length:"51〜65cm"},
+  "ヤイロチョウ": {kanji:"八色鳥",reading:"ピッタ・ノボゥエギネアエ・ニッポネンシス",length:"18〜20cm"},
+  "サンショウクイ": {kanji:"山椒食",reading:"ペリクロコトゥス・ジアウァリカトゥス",length:"19〜20cm"},
+  "コウライウグイス": {kanji:"高麗鶯",reading:"オリオルス・キネンシス",length:"24〜25cm"},
+  "オウチュウ": {kanji:"烏秋",reading:"ディクルルス・マクロケルクス",length:"28〜30cm"},
+  "サンコウチョウ": {kanji:"三光鳥",reading:"テルプシポネ・アテア",length:"オス44〜49cm・メス17〜18cm"},
+  "モズ": {kanji:"百舌鳥",reading:"ラニウス・ブッケファルス",length:"19〜20cm"},
+  "アカモズ": {kanji:"赤百舌",reading:"ラニウス・クリスタトゥス",length:"18〜20cm"},
+  "チゴモズ": {kanji:"稚児百舌",reading:"ラニウス・ティグリヌス",length:"17〜20cm"},
+  "オオモズ": {kanji:"大百舌",reading:"ラニウス・エクスキビトル",length:"22〜26cm"},
+  "カケス": {kanji:"橿鳥",reading:"ガッルルス・グランダリウス",length:"32〜35cm"},
+  "ルリカケス": {kanji:"瑠璃橿鳥",reading:"ガッルルス・ランファキ",length:"35〜38cm"},
+  "オナガ": {kanji:"尾長",reading:"キュアノピカ・キュアナ",length:"36〜37cm"},
+  "カササギ": {kanji:"鵲",reading:"ピカ・セリカ",length:"45cm"},
+  "ホシガラス": {kanji:"星烏",reading:"ヌキフラガ・カリュオカタクテス",length:"32〜35cm"},
+  "コクマルガラス": {kanji:"小丸烏",reading:"コルウス・ダウリクス",length:"31〜34cm"},
+  "ミヤマガラス": {kanji:"深山烏",reading:"コルウス・フルギレグス",length:"44〜47cm"},
+  "ハシボソガラス": {kanji:"嘴細烏",reading:"コルウス・コロネ",length:"48〜53cm"},
+  "ハシブトガラス": {kanji:"嘴太烏",reading:"コルウス・マクロリュンコス",length:"56〜61cm"},
+  "キレンジャク": {kanji:"黄連雀",reading:"ボンビキッラ・ガッルルス",length:"18〜23cm"},
+  "ヒレンジャク": {kanji:"緋連雀",reading:"ボンビキッラ・ヤポニカ",length:"17〜18cm"},
+  "ヒガラ": {kanji:"日雀",reading:"ペリパルス・アテル",length:"11cm"},
+  "ヤマガラ": {kanji:"山雀",reading:"スィッタ・ヴァリウス",length:"13〜15cm"},
+  "コガラ": {kanji:"小雀",reading:"ポエキレ・モンタヌス",length:"13〜15cm"},
+  "ハシブトガラ": {kanji:"嘴太雀",reading:"ポエキレ・フドソニクス",length:"12〜14cm"},
+  "シジュウカラ": {kanji:"四十雀",reading:"パルス・マイノル",length:"13〜15cm"},
+  "ヒバリ": {kanji:"雲雀",reading:"アラウダ・アルウェンシス",length:"16〜18cm"},
+  "ヒヨドリ": {kanji:"鵯",reading:"ヒュプシペテス・アムアウロティス",length:"27〜29cm"},
+  "シロガシラ": {kanji:"白頭",reading:"ピクノノトゥス・シネンシス",length:"17〜21cm"},
+  "ショウドウツバメ": {kanji:"小洞燕",reading:"リパリア・リパリア",length:"12〜14cm"},
+  "ツバメ": {kanji:"燕",reading:"ヒルンド・ルスティカ",length:"17〜19cm"},
+  "イワツバメ": {kanji:"岩燕",reading:"デリコン・ウルビクム",length:"12〜13cm"},
+  "コシアカツバメ": {kanji:"腰赤燕",reading:"ケクロピス・ダウリカ",length:"17〜19cm"},
+  "ウグイス": {kanji:"鶯",reading:"ホロルネウラ・キャネア",length:"オス16cm・メス14cm"},
+  "ヤブサメ": {kanji:"藪雨",reading:"ウルルスニア・スクォアメイセプス",length:"11cm"},
+  "エナガ": {kanji:"柄長",reading:"アエギタロス・カウダトゥス",length:"13〜14cm"},
+  "センダイムシクイ": {kanji:"仙台虫喰",reading:"フュッロスコプス・コロネアトゥス",length:"10〜11cm"},
+  "エゾムシクイ": {kanji:"蝦夷虫喰",reading:"フュッロスコプス・ボレアリス",length:"10〜11cm"},
+  "メボソムシクイ": {kanji:"目細虫喰",reading:"フュッロスコプス・オクロマルス",length:"11〜12cm"},
+  "オオムシクイ": {kanji:"大虫喰",reading:"フュッロスコプス・マグニロストリス",length:"12cm"},
+  "オオヨシキリ": {kanji:"大葦切",reading:"アクロケファルス・アルンディナケウス",length:"18〜19cm"},
+  "コヨシキリ": {kanji:"小葦切",reading:"アクロケファルス・ドゥメトルム",length:"13〜14cm"},
+  "オオセッカ": {kanji:"大雪加",reading:"メガルルス・パレアニクス",length:"18〜19cm"},
+  "セッカ": {kanji:"雪加",reading:"キッスティコラ・エクシリス",length:"11〜13cm"},
+  "メジロ": {kanji:"目白",reading:"ゾステロプス・ヤポニクス",length:"11〜12cm"},
+  "キクイタダキ": {kanji:"菊戴",reading:"レグルス・レグルス",length:"9〜10cm"},
+  "ミソサザイ": {kanji:"鷦鷯",reading:"トログロデュッテス・トログロデュッテス",length:"9〜10cm"},
+  "ゴジュウカラ": {kanji:"五十雀",reading:"スィッタ・エウロパエア",length:"13〜14cm"},
+  "キバシリ": {kanji:"木走",reading:"ケルティア・ファミリアリス",length:"12〜13cm"},
+  "ムクドリ": {kanji:"椋鳥",reading:"スパオドテラ・クリネア",length:"23〜24cm"},
+  "コムクドリ": {kanji:"小椋鳥",reading:"アゲライオイデス・ポリオゼファルス",length:"19cm"},
+  "トラツグミ": {kanji:"虎鶫",reading:"ゾオテラ・ダウマ",length:"30cm"},
+  "マミジロ": {kanji:"眉白",reading:"ゾオテラ・シベリカ",length:"22〜24cm"},
+  "クロツグミ": {kanji:"黒鶫",reading:"トゥルドゥス・マンダリヌス",length:"22〜24cm"},
+  "マミチャジナイ": {kanji:"眉茶鶫",reading:"トゥルドゥス・オブスクルス",length:"21〜23cm"},
+  "シロハラ": {kanji:"白腹",reading:"トゥルドゥス・パッリドゥス",length:"24〜25cm"},
+  "アカハラ": {kanji:"赤腹",reading:"トゥルドゥス・クリセウス",length:"23〜24cm"},
+  "アカコッコ": {kanji:"赤木五倍子",reading:"トゥルドゥス・チェレスティヌス",length:"23〜25cm"},
+  "ツグミ": {kanji:"鶫",reading:"トゥルドゥス・エウノムス",length:"24cm"},
+  "ハチジョウツグミ": {kanji:"八丈鶫",reading:"トゥルドゥス・ナウマンニ",length:"24cm"},
+  "コマドリ": {kanji:"駒鳥",reading:"エリタクス・アカエントゥス",length:"14cm"},
+  "ノゴマ": {kanji:"野駒",reading:"カルポダクス・シビリクス",length:"14〜15cm"},
+  "コルリ": {kanji:"小瑠璃",reading:"テルシノエ・キュアナ",length:"13cm"},
+  "アカヒゲ": {kanji:"赤髭",reading:"コピュコス・コムルス",length:"14〜15cm"},
+  "ルリビタキ": {kanji:"瑠璃鶲",reading:"タルシゲル・キュアヌルス",length:"13〜14cm"},
+  "オジロビタキ": {kanji:"尾白鶲",reading:"フィケドゥラ・パルウラ",length:"11〜12cm"},
+  "ジョウビタキ": {kanji:"常鶲",reading:"フォエニクルルス・アウロレウス",length:"13〜15cm"},
+  "ノビタキ": {kanji:"野鶲",reading:"サクシコラ・マウルス",length:"12〜13cm"},
+  "イソヒヨドリ": {kanji:"磯鵯",reading:"モンティコラ・ソリタリウス",length:"23〜25cm"},
+  "キビタキ": {kanji:"黄鶲",reading:"フィケドゥラ・ナルキッシナ",length:"13〜14cm"},
+  "オオルリ": {kanji:"大瑠璃",reading:"キュアノプティラ・キュアノメラナ",length:"16〜18cm"},
+  "ムギマキ": {kanji:"麦播",reading:"フィケドゥラ・ムギマキ",length:"12〜13cm"},
+  "コサメビタキ": {kanji:"小鮫鶲",reading:"ムスキカパ・ダウリカ",length:"12〜13cm"},
+  "サメビタキ": {kanji:"鮫鶲",reading:"ムスキカパ・シビリカ",length:"13cm"},
+  "エゾビタキ": {kanji:"蝦夷鶲",reading:"ムスキカパ・グリセイスティクタ",length:"13〜14cm"},
+  "マダラヒタキ": {kanji:"斑鶲",reading:"フィケドゥラ・ヒュポレウカ",length:"13cm"},
+  "カワガラス": {kanji:"河烏",reading:"キンクルス・パッルラシイ",length:"21〜23cm"},
+  "スズメ": {kanji:"雀",reading:"パッセル・モンタヌス",length:"14〜15cm"},
+  "ニュウナイスズメ": {kanji:"入内雀",reading:"パッセル・ルティランス",length:"14cm"},
+  "イエスズメ": {kanji:"家雀",reading:"パッセル・ドメスティクス",length:"14〜15cm"},
+  "イワヒバリ": {kanji:"岩鷚",reading:"プルネッラ・コッラリス",length:"17〜20cm"},
+  "カヤクグリ": {kanji:"萱潜",reading:"プルネッラ・モデュラリス",length:"13〜14cm"},
+  "キセキレイ": {kanji:"黄鶺鴒",reading:"モタキッラ・キネレア",length:"20cm"},
+  "ハクセキレイ": {kanji:"白鶺鴒",reading:"モタキッラ・アルバ",length:"20〜22cm"},
+  "セグロセキレイ": {kanji:"背黒鶺鴒",reading:"モタキッラ・グランディス",length:"21cm"},
+  "ツメナガセキレイ": {kanji:"爪長鶺鴒",reading:"モタキッラ・フラウァ",length:"15〜17cm"},
+  "ビンズイ": {kanji:"便追",reading:"アンツス・ホジグソニイ",length:"15cm"},
+  "タヒバリ": {kanji:"田鷚",reading:"アンツス・ルベスケンス",length:"15〜17cm"},
+  "ムネアカタヒバリ": {kanji:"胸赤田鷚",reading:"アンツス・ケルウィヌス",length:"14〜15cm"},
+  "アトリ": {kanji:"花鶏",reading:"フリンギッラ・モンティフリンギッラ",length:"16cm"},
+  "シメ": {kanji:"鴲",reading:"コッコトラウステス・コッコトラウステス",length:"18〜19cm"},
+  "イカル": {kanji:"錐",reading:"エオパエガ・ペルソナータ",length:"23cm"},
+  "コイカル": {kanji:"小錐",reading:"エオパエガ・パーソニー",length:"19cm"},
+  "ウソ": {kanji:"鷽",reading:"ピュッルラ・ピュッルラ",length:"15〜17cm"},
+  "ベニマシコ": {kanji:"紅猿子",reading:"ウラギンタエニア・シビリカ",length:"14〜15cm"},
+  "オオマシコ": {kanji:"大猿子",reading:"カルポダクス・ロセウス",length:"17〜18cm"},
+  "カワラヒワ": {kanji:"河原鶸",reading:"クロリス・シニカ",length:"14〜15cm"},
+  "ベニヒワ": {kanji:"紅鶸",reading:"アカンティス・フラムメア",length:"12〜14cm"},
+  "マヒワ": {kanji:"真鶸",reading:"スピヌス・スピヌス",length:"12cm"},
+  "イスカ": {kanji:"交喙",reading:"ロクシア・クルウィロストラ",length:"16〜17cm"},
+  "ギンザンマシコ": {kanji:"銀山猿子",reading:"ピニコラ・エヌクレアトル",length:"19〜20cm"},
+  "ハギマシコ": {kanji:"萩猿子",reading:"レウコスティクテ・アルクティカ",length:"17〜19cm"},
+  "ホオジロ": {kanji:"頬白",reading:"エンベリザ・キオイデス",length:"16〜17cm"},
+  "カシラダカ": {kanji:"頭高",reading:"エンベリザ・ルスティカ",length:"14〜15cm"},
+  "ミヤマホオジロ": {kanji:"深山頬白",reading:"エンベリザ・エレガンス",length:"15〜16cm"},
+  "ホオアカ": {kanji:"頬赤",reading:"エンベリザ・フスカタ",length:"14〜15cm"},
+  "コホオアカ": {kanji:"小頬赤",reading:"エンベリザ・プシロ",length:"13〜14cm"},
+  "キマユホオジロ": {kanji:"黄眉頬白",reading:"エンベリザ・クリソフリュス",length:"13〜14cm"},
+  "アオジ": {kanji:"青鵐",reading:"エンベリザ・スポジオセファラ",length:"16cm"},
+  "クロジ": {kanji:"黒鵐",reading:"エンベリザ・ウァリアビリス",length:"17cm"},
+  "コジュリン": {kanji:"小鵐",reading:"エンベリザ・ヤエソエンシス",length:"14〜16cm"},
+  "オオジュリン": {kanji:"大鵐",reading:"エンベリザ・スカエニクルス",length:"16〜18cm"},
+  "シマアオジ": {kanji:"縞青鵐",reading:"エンベリザ・アウレオラ",length:"14〜15cm"},
+  "ノジコ": {kanji:"野路子",reading:"エンベリザ・ニッポニカ",length:"14〜16cm"},
+  "ツメナガホオジロ": {kanji:"爪長頬白",reading:"カルカリウス・ラポニクス",length:"15〜16cm"},
+  "ユキホオジロ": {kanji:"雪頬白",reading:"プレクトロファナクス・ニウァリス",length:"16〜18cm"},
+};
+
+
 const SEASON_TAGS = ["留鳥","漂鳥","夏鳥","冬鳥","旅鳥","迷鳥","外来種"];
 const PREFECTURES = ["北海道","青森県","岩手県","宮城県","秋田県","山形県","福島県","茨城県","栃木県","群馬県","埼玉県","千葉県","東京都","神奈川県","新潟県","富山県","石川県","福井県","山梨県","長野県","岐阜県","静岡県","愛知県","三重県","滋賀県","京都府","大阪府","兵庫県","奈良県","和歌山県","鳥取県","島根県","岡山県","広島県","山口県","徳島県","香川県","愛媛県","高知県","福岡県","佐賀県","長崎県","熊本県","大分県","宮崎県","鹿児島県","沖縄県"];
 const ENVIRONMENTS = ["市街地","公園","森林公園","田畑","湿地・ヨシ原・河原","湖沼","河川（中流〜下流）","河川（渓流〜上流）","低地林（里山）","山地（林道・沢）","高山","高原","干潟・砂浜","漁港","磯場・ゴロタ場"];
@@ -906,13 +1217,21 @@ function App(){
             const det = await fetch(`https://api.inaturalist.org/v1/taxa/${t.id}?locale=ja`).then(r=>r.json());
             const taxon = det.results?.[0];
             const anc = taxon?.ancestors || [];
-            order  = anc.find(a=>a.rank==="order")?.preferred_common_name || anc.find(a=>a.rank==="order")?.name || null;
-            family = anc.find(a=>a.rank==="family")?.preferred_common_name || anc.find(a=>a.rank==="family")?.name || null;
-            genus  = anc.find(a=>a.rank==="genus")?.name || null;
-            // 命名者・年はname_with_authorshipから抽出
+            const orderT  = anc.find(a=>a.rank==="order");
+            const familyT = anc.find(a=>a.rank==="family");
+            const genusT  = anc.find(a=>a.rank==="genus");
+            order  = orderT?.preferred_common_name  || orderT?.name  || null;
+            family = familyT?.preferred_common_name || familyT?.name || null;
+            // 属：日本語名があればそれ＋属、なければラテン名＋属
+            const genusJa  = genusT?.preferred_common_name;
+            const genusLat = genusT?.name;
+            genus = genusJa ? (genusJa.endsWith("属") ? genusJa : genusJa + "属") : (genusLat ? genusLat + "属" : null);
+            // 命名者・年：name_with_authorshipから抽出
             const nwa = taxon?.name_with_authorship || "";
-            const m = nwa.match(/\((.+)\)$/) || nwa.match(/([A-Z][a-z]+,\s*\d{4})$/);
-            authorship = m?.[1] || null;
+            const sciName = t?.name || "";
+            let authStr = nwa.startsWith(sciName) ? nwa.slice(sciName.length).trim() : "";
+            if (authStr.startsWith("(") && authStr.endsWith(")")) authStr = authStr.slice(1,-1).trim();
+            authorship = authStr || null;
           } catch(e){}
         }
         setSpeciesInfo({
@@ -1358,13 +1677,7 @@ function App(){
             <div className="sp-detail-hdr">
               <button className="back-btn" onClick={()=>{ setView("category"); setActiveSpecies(null); }}>← {cat?.label}に戻る</button>
               <div className="sp-detail-name">{activeSpecies}</div>
-              {speciesInfo?.scientific && (
-                <div style={{fontSize:"13px",color:"#6A7A5A",fontStyle:"italic",letterSpacing:".03em",margin:"2px 0 6px"}}>
-                  {speciesInfo.scientific}
-                </div>
-              )}
               <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap",marginTop:"4px",marginBottom:"12px"}}>
-                <div className="sp-detail-cat">{cat?.label}</div>
                 {speciesInfo?.status && (
                   <span style={{
                     fontSize:"11px",fontWeight:"600",letterSpacing:".05em",
@@ -1386,34 +1699,60 @@ function App(){
                 )}
               </div>
               {/* 分類情報テーブル */}
-              {speciesInfo && (speciesInfo.scientific || speciesInfo.order || speciesInfo.family || speciesInfo.genus) && (
-                <table style={{
-                  width:"100%",borderCollapse:"collapse",
-                  fontSize:"13px",color:"#3C3028",marginBottom:"4px",
-                  background:"#FAFAF7",borderRadius:"6px",overflow:"hidden",
-                  border:"1px solid #E0D8C8"
-                }}>
+              {((speciesInfo && (speciesInfo.scientific || speciesInfo.order || speciesInfo.family || speciesInfo.genus)) || BIRD_DATA[activeSpecies]) ? (
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px",color:"#3C3028",marginBottom:"4px",background:"#FAFAF7",borderRadius:"6px",overflow:"hidden",border:"1px solid #E0D8C8"}}>
                   <tbody>
-                    {[
-                      speciesInfo.scientific && {label:"学名", value: <span style={{fontStyle:"italic"}}>{speciesInfo.scientific}</span>},
-                      speciesInfo.authorship && {label:"命名者・年", value: speciesInfo.authorship},
-                      (speciesInfo.order||speciesInfo.family||speciesInfo.genus) && {
-                        label:"分類",
-                        value: [speciesInfo.order, speciesInfo.family, speciesInfo.genus].filter(Boolean).join("・")
-                      },
-                    ].filter(Boolean).map((row,i)=>(
-                      <tr key={i} style={{borderBottom:"1px solid #E8E0D0"}}>
-                        <td style={{
-                          padding:"7px 12px",color:"#8A7A5A",fontWeight:"500",
-                          whiteSpace:"nowrap",width:"6em",letterSpacing:".03em",
-                          background:"#F5F0E8"
-                        }}>{row.label}</td>
-                        <td style={{padding:"7px 12px",lineHeight:"1.5"}}>{row.value}</td>
+                    {BIRD_DATA[activeSpecies]?.kanji && (
+                      <tr style={{borderBottom:"1px solid #E8E0D0"}}>
+                        <td style={{padding:"7px 12px",color:"#8A7A5A",fontWeight:"500",whiteSpace:"nowrap",width:"6em",background:"#F5F0E8"}}>和名（漢字）</td>
+                        <td style={{padding:"7px 12px"}}>{BIRD_DATA[activeSpecies].kanji}</td>
                       </tr>
-                    ))}
+                    )}
+                    {speciesInfo?.scientific && (
+                      <tr style={{borderBottom:"1px solid #E8E0D0"}}>
+                        <td style={{padding:"7px 12px",color:"#8A7A5A",fontWeight:"500",whiteSpace:"nowrap",width:"6em",background:"#F5F0E8"}}>学名</td>
+                        <td style={{padding:"7px 12px",fontStyle:"italic"}}>{speciesInfo.scientific}</td>
+                      </tr>
+                    )}
+                    {BIRD_DATA[activeSpecies]?.reading && (
+                      <tr style={{borderBottom:"1px solid #E8E0D0"}}>
+                        <td style={{padding:"7px 12px",color:"#8A7A5A",fontWeight:"500",whiteSpace:"nowrap",width:"6em",background:"#F5F0E8"}}>学名の読み</td>
+                        <td style={{padding:"7px 12px"}}>{BIRD_DATA[activeSpecies].reading}</td>
+                      </tr>
+                    )}
+                    {speciesInfo?.authorship && (
+                      <tr style={{borderBottom:"1px solid #E8E0D0"}}>
+                        <td style={{padding:"7px 12px",color:"#8A7A5A",fontWeight:"500",whiteSpace:"nowrap",width:"6em",background:"#F5F0E8"}}>命名者・年</td>
+                        <td style={{padding:"7px 12px"}}>{speciesInfo.authorship}</td>
+                      </tr>
+                    )}
+                    {speciesInfo?.order && (
+                      <tr style={{borderBottom:"1px solid #E8E0D0"}}>
+                        <td style={{padding:"7px 12px",color:"#8A7A5A",fontWeight:"500",whiteSpace:"nowrap",width:"6em",background:"#F5F0E8"}}>目</td>
+                        <td style={{padding:"7px 12px"}}>{speciesInfo.order}</td>
+                      </tr>
+                    )}
+                    {speciesInfo?.family && (
+                      <tr style={{borderBottom:"1px solid #E8E0D0"}}>
+                        <td style={{padding:"7px 12px",color:"#8A7A5A",fontWeight:"500",whiteSpace:"nowrap",width:"6em",background:"#F5F0E8"}}>科</td>
+                        <td style={{padding:"7px 12px"}}>{speciesInfo.family}</td>
+                      </tr>
+                    )}
+                    {speciesInfo?.genus && (
+                      <tr style={{borderBottom: BIRD_DATA[activeSpecies]?.length ? "1px solid #E8E0D0" : "none"}}>
+                        <td style={{padding:"7px 12px",color:"#8A7A5A",fontWeight:"500",whiteSpace:"nowrap",width:"6em",background:"#F5F0E8"}}>属</td>
+                        <td style={{padding:"7px 12px"}}>{speciesInfo.genus}</td>
+                      </tr>
+                    )}
+                    {BIRD_DATA[activeSpecies]?.length && (
+                      <tr>
+                        <td style={{padding:"7px 12px",color:"#8A7A5A",fontWeight:"500",whiteSpace:"nowrap",width:"6em",background:"#F5F0E8"}}>全長</td>
+                        <td style={{padding:"7px 12px"}}>{BIRD_DATA[activeSpecies].length}</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
-              )}
+              ) : null}
               {!speciesInfo && (
                 <div style={{fontSize:"12px",color:"#B0A890",padding:"8px 0"}}>分類情報を読み込み中…</div>
               )}
